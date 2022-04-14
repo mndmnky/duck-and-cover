@@ -1,0 +1,17 @@
+[package]
+name = "code"
+version = "1.0.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "duck_and_cover"
+path = "src/lib.rs"
+
+[[bin]]
+name = "exact"
+path = "src/bin/exact.rs"
+
+[dependencies]
+fxhash = "0.2.1"
