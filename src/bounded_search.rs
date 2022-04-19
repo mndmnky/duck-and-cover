@@ -39,7 +39,7 @@ impl VCInstance {
         if self.graph.num_nodes() == 0 {
             if self.solution.len() < self.upper_bound.expect("upper bound was set") {
                 // If we use the link node rule, we have to finallize the found solution.
-                let sol = self.finallize_solution(&self.solution).expect("Finallizing should not go wrong");
+                let sol = self.finallize_solution(&self.solution).expect("Finallizing should not go wrong at empty graph");
                 self.update_current_best(&sol);
                 return Some(sol);
             } else {
@@ -58,7 +58,7 @@ impl VCInstance {
             }
             if solution.len() < self.upper_bound.expect("upper bound was set") {
                 // If we use the link node rule, we have to finallize the found solution.
-                let sol = self.finallize_solution(&solution).expect("Finallizing should not go wrong");
+                let sol = self.finallize_solution(&solution).expect("Finallizing should not go wrong after split");
                 self.update_current_best(&sol);
                 return Some(sol);
             } else {

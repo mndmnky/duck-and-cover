@@ -12,9 +12,18 @@ pub fn main() -> Result<(), Box<dyn error::Error>> {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
     let graph = DyUGraph::read_gr(stdin)?;
+
+    // dbg:
+    let num_nodes = graph.num_nodes();
+    eprintln!("graph has {} nodes", num_nodes);
+
     let mut vci = VCInstance::new(graph);
     let priority = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique];
     let resu = vci.branch_and_reduce(priority)?;
+
+    // dbg:
+    assert!(resu.iter().max().unwrap() < &num_nodes);
+
     VCInstance::write_solution(&resu, &mut stdout)?;
     Ok(())
 }

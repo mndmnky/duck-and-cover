@@ -127,7 +127,6 @@ impl VCInstance {
     }
 
     /// Updates the lower bound. 
-    /// TODO: test
     pub fn update_lower_bound(&mut self, lb: usize) {
         if let Some(ref mut lower) = self.lower_bound {
             if &lb > lower {
@@ -177,10 +176,11 @@ impl VCInstance {
     /// correct node. 
     ///
     /// Attention: If `solution` is not final, this can lead to
+    /// erroneous behaviour.
     pub fn finallize_solution(&self, solution: &FxHashSet<usize>) -> Result<FxHashSet<usize>, ProcessingError>{
         let mut conversions = self.conversion.clone();
         let mut new_sol = solution.clone();
-        while conversions.is_empty() {
+        while !conversions.is_empty() {
             if !new_sol.remove(&(conversions.len() + self.graph.num_reserved() - 1)) {
                 return Err(ProcessingError::ConversionError)
             }

@@ -31,6 +31,9 @@ A solver for the vertex cover problem. This library provides algorithms and data
 * Fix input format to fit the PACE19 challenge format.
 * Fix improper merging.
 
+### 1.0.2
+* Fixed bug in `finallize_solution()`.
+
 ## Todo 
 
 ### 1.?.?
