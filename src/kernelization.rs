@@ -80,11 +80,9 @@ impl VCInstance {
         // Go through all the nodes 
         let nodes = self.graph.nodes().collect::<Vec<_>>();
         for node in nodes {
-            dbg!(&node);
             let neighborhood = self.graph.neighbors(node).as_ref().expect("`node` exists").clone();
             // Check if strong neighborhood is a cluster 
             if self.graph.is_clique(&neighborhood) {
-                dbg!(&neighborhood);
                 self.add_all_to_solution(&neighborhood).expect("`self.graph` hold all of these nodes.");
                 self.delete_node(node);
                 return true
@@ -125,14 +123,13 @@ impl VCInstance {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::io::Cursor;
     use crate::graph::DyUGraph;
     use crate::vc_instance::VCInstance;
 
     #[test]
     fn simple_rules_test() {
-        let gr = Cursor::new("p cep 16 12\n5 13\n13 9\n6 14\n14 10\n7 15\n15 11\n8 16\n16 12\n9 10\n10 11\n11 12\n12 9\n");
+        let gr = Cursor::new("p td 16 12\n5 13\n13 9\n6 14\n14 10\n7 15\n15 11\n8 16\n16 12\n9 10\n10 11\n11 12\n12 9\n");
         let graph = DyUGraph::read_gr(gr);
         assert!(graph.is_ok());
         let mut ins = VCInstance::new(graph.unwrap());
@@ -148,7 +145,7 @@ mod tests {
 
     #[test]
     fn clique_rule_test() {
-        let gr = Cursor::new("p cep 7 12\n1 2\n1 3\n1 7\n2 3\n2 4\n3 6\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\n");
+        let gr = Cursor::new("p td 7 12\n1 2\n1 3\n1 7\n2 3\n2 4\n3 6\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\n");
         let graph = DyUGraph::read_gr(gr);
         assert!(graph.is_ok());
         let mut ins = VCInstance::new(graph.unwrap());

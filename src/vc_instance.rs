@@ -249,7 +249,7 @@ mod tests {
 
     #[test]
     fn alter_rebuild_test() {
-        let gr = Cursor::new("p cep 7 11\n1 2\n2 3\n2 5\n2 6\n3 4\n3 5\n3 6\n4 5\n4 6\n\
+        let gr = Cursor::new("p td 7 11\n1 2\n2 3\n2 5\n2 6\n3 4\n3 5\n3 6\n4 5\n4 6\n\
                               5 7\n6 7\n");
         let graph = DyUGraph::read_gr(gr);
         assert!(graph.is_ok());
@@ -266,7 +266,7 @@ mod tests {
 
     #[test]
     fn bounds_test() {
-        let gr = Cursor::new("p cep 7 11\n1 2\n2 3\n2 5\n2 6\n3 4\n3 5\n3 6\n4 5\n4 6\n\
+        let gr = Cursor::new("p td 7 11\n1 2\n2 3\n2 5\n2 6\n3 4\n3 5\n3 6\n4 5\n4 6\n\
                               5 7\n6 7\n");
         let graph = DyUGraph::read_gr(gr);
         assert!(graph.is_ok());

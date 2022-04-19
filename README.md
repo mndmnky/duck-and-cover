@@ -27,6 +27,10 @@ A solver for the vertex cover problem. This library provides algorithms and data
 ### 1.0.0 
 * Initial version. Includes the basic algorithms and data structure.
 
+### 1.0.1
+* Fix input format to fit the PACE19 challenge format.
+* Fix improper merging.
+
 ## Todo 
 
 ### 1.?.?

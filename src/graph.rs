@@ -248,6 +248,11 @@ impl DyUGraph {
                     .collect();
                 // add neighbors (both sides)
                 add_neighs.extend(&new_neighbors);
+                for neigh in &new_neighbors {
+                    if let Some(ref mut nn) = self.adj_list[*neigh] {
+                        nn.insert(into);
+                    }
+                }
                 return Some((neighbors, new_neighbors));
             } else {
                 self.reinsert_node(from, &neighbors);
@@ -292,7 +297,7 @@ impl DyUGraph {
             let line = lines.next().ok_or(ImportError::InputMalformedError)??;
             let mut s = line.split(' ');
             if let Some("p") = s.next() {} else { return Err(ImportError::InputMalformedError); }
-            if let Some("cep") = s.next() {} else { return Err(ImportError::InputMalformedError); }
+            if let Some("td") = s.next() {} else { return Err(ImportError::InputMalformedError); }
             let n: usize = s.next().ok_or(ImportError::InputMalformedError)?.parse()?;
             let m: usize = s.next().ok_or(ImportError::InputMalformedError)?.parse()?;
             if s.next().is_some() { return Err(ImportError::InputMalformedError); }
@@ -347,14 +352,14 @@ mod tests {
 
     #[test]
     fn read_gr_test() {
-        let gr = Cursor::new("p cep 7 9\n1 2\n1 3\n2 3\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\n");
+        let gr = Cursor::new("p td 7 9\n1 2\n1 3\n2 3\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\n");
         let graph = DyUGraph::read_gr(gr);
         assert!(graph.is_ok());
     }
 
     #[test]
     fn greedy_max_clque_test() {
-        let gr = Cursor::new("p cep 7 9\n1 2\n1 3\n2 3\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\n");
+        let gr = Cursor::new("p td 7 9\n1 2\n1 3\n2 3\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\n");
         let graph = DyUGraph::read_gr(gr);
         assert!(graph.is_ok());
         let graph = graph.unwrap();
@@ -363,7 +368,7 @@ mod tests {
 
     #[test]
     fn connected_test() {
-        let gr = Cursor::new("p cep 7 9\n1 2\n1 3\n2 3\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\n");
+        let gr = Cursor::new("p td 7 9\n1 2\n1 3\n2 3\n4 5\n4 6\n4 7\n5 6\n5 7\n6 7\n");
         let graph = DyUGraph::read_gr(gr);
         assert!(graph.is_ok());
         let graph = graph.unwrap();
@@ -378,5 +383,4 @@ mod tests {
             assert_eq!(g2.greedy_max_clique().len(), 3);
         }
     }
-
 }

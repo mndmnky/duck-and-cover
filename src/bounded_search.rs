@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     fn branch_and_reduce_test() {
-        let gr = Cursor::new("p cep 16 33\n1 2\n1 3\n1 4\n1 5\n1 6\n2 3\n2 4\n2 5\n2 10\n\
+        let gr = Cursor::new("p td 16 33\n1 2\n1 3\n1 4\n1 5\n1 6\n2 3\n2 4\n2 5\n2 10\n\
                               3 4\n3 5\n3 9\n4 5\n4 8\n5 7\n6 11\n6 12\n7 13\n8 14\n\
                               9 15\n10 16\n11 12\n11 13\n11 15\n11 16\n12 13\n12 14\n\
                               12 16\n13 14\n13 15\n14 15\n14 16\n15 16\n");
