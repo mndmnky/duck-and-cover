@@ -70,23 +70,26 @@ impl VCInstance {
         let clique = self.graph.greedy_max_clique();
         if clique.len() > 2 {
             let mut solution_set = clique.clone();
-            let mut current_best = None;
-            for node in clique {
-                self.put_register();
-                solution_set.remove(&node);
-                self.add_all_to_solution(&solution_set).expect("`solution_set` is in `self.graph`");
-                if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
-                    current_best = Some(sol);
-                }
-                self.rebuild_section();
-                solution_set.insert(node);
-            }
+            let mut current_best: Option<FxHashSet<usize>> = None;
             self.put_register();
             self.add_all_to_solution(&solution_set).expect("`solution_set` is in `self.graph`");
             if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
                 current_best = Some(sol);
             }
             self.rebuild_section();
+            for node in clique {
+                self.put_register();
+                solution_set.remove(&node);
+                self.add_all_to_solution(&solution_set).expect("`solution_set` is in `self.graph`");
+                // get neighbors and add them
+                let nn = self.graph.neighbors(node).as_ref().expect("`node` exists").clone();
+                self.add_all_to_solution(&nn).expect("`nn` exists");
+                if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
+                    current_best = Some(sol);
+                }
+                self.rebuild_section();
+                solution_set.insert(node);
+            }
             return current_best
         } else {
             // On high degree node and neighbors
@@ -129,6 +132,20 @@ mod tests {
         let opt_sol = ins.branch_and_reduce(&[Rule::SimpleRules]);
         assert!(opt_sol.is_ok());
         assert_eq!(opt_sol.unwrap().len(), 10);
+    }
+
+    #[test]
+    fn branch_and_reduce_intervined_cliques_test() {
+        let gr = Cursor::new("p td 12 30\n1 2\n1 3\n1 4\n1 5\n1 9\n2 3\n2 4\n2 6\n2 10\n\
+                              3 4\n3 7\n3 11\n4 8\n4 12\n5 6\n5 7\n5 8\n5 9\n6 7\n\
+                              6 8\n6 10\n7 8\n7 11\n8 12\n9 10\n9 11\n9 12\n\
+                              10 11\n10 12\n11 12\n");
+        let graph = DyUGraph::read_gr(gr);
+        assert!(graph.is_ok());
+        let mut ins = VCInstance::new(graph.unwrap());
+        let opt_sol = ins.branch_and_reduce(&[Rule::SimpleRules]);
+        assert!(opt_sol.is_ok());
+        assert_eq!(opt_sol.unwrap().len(), 9);
     }
 
 }

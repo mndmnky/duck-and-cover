@@ -43,33 +43,28 @@ impl VCInstance {
 
     /// Contracts node with degree 2.
     ///
-    /// Should not reach the panic statement.
+    /// TODO: Check if we can repeatadly do this.
     pub fn contract_link_nodes(&mut self) -> bool {
-        let mut changed = false;
-        'outer: loop {
-            let nodes = self.graph.nodes().collect::<Vec<usize>>();
-            for node in nodes {
-                let neighbors = self.graph.neighbors(node).as_ref().expect("`node` exists");
-                if neighbors.len() == 2 {
-                    let mut neighs = neighbors.iter().clone();
-                    let n1 = *neighs.next().expect("`node` has degree 2");
-                    let n2 = *neighs.next().expect("`node` has degree 2");
-                    if self.graph.edge_exists((n1, n2)) {
-                        self.add_to_solution(n1);
-                        self.add_to_solution(n2);
-                        self.delete_node(node);
-                        // Should start over with simple rules.
-                        return true
-                    } else {
-                        self.contract_link_node(node, n1, n2).expect("`node` is a link node but could not be contracted");
-                        changed = true;
-                        continue 'outer
-                    }
+        let nodes = self.graph.nodes().collect::<Vec<_>>();
+        for node in nodes {
+            let neighbors = self.graph.neighbors(node).as_ref().expect("`node` exists");
+            if neighbors.len() == 2 {
+                let mut neighs = neighbors.iter().clone();
+                let n1 = *neighs.next().expect("`node` has degree 2");
+                let n2 = *neighs.next().expect("`node` has degree 2");
+                if self.graph.edge_exists((n1, n2)) {
+                    self.add_to_solution(n1);
+                    self.add_to_solution(n2);
+                    self.delete_node(node);
+                    // Should start over with simple rules.
+                    return true
+                } else {
+                    self.contract_link_node(node, n1, n2).expect("`node` is a link node but could not be contracted");
+                    return true
                 }
             }
-            break 'outer
         }
-        changed
+        false
     }
 
     /// Applies the clique rule (see documentation TODO) exhaustively by checking for each node
@@ -154,6 +149,21 @@ mod tests {
         assert_eq!(ins.graph.edges().count(), 3);
         assert!(ins.exhaustive_clique_rule());
         assert_eq!(ins.graph.num_nodes(), 0);
+    }
+
+    #[test]
+    fn link_rule_test() {
+        let gr = Cursor::new("p td 10 14\n1 2\n1 3\n2 4\n2 5\n3 4\n3 5\n\
+                             4 6\n4 7\n5 6\n5 7\n6 8\n6 9\n7 9\n7 10\n");
+        let graph = DyUGraph::read_gr(gr);
+        assert!(graph.is_ok());
+        let mut ins = VCInstance::new(graph.unwrap());
+        assert!(ins.contract_link_nodes());
+        assert!(ins.contract_link_nodes());
+        assert!(ins.contract_link_nodes());
+        assert!(ins.simple_rules());
+        assert!(ins.finallize_solution_in_place().is_ok());
+        assert_eq!(ins.solution.len(), 4);
     }
 
 }

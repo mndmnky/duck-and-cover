@@ -227,6 +227,21 @@ impl VCInstance {
         self.register.push(self.alterations.len());
     }
 
+    /// Checks if a solution is valid.
+    pub fn validate_solution(&self, sol: &FxHashSet<usize>) -> bool {
+        let mut clone = self.clone();
+        for node in sol {
+            if *node >= clone.graph.num_reserved() {
+                return false
+            }
+            clone.graph.delete_node(*node);
+        }
+        if clone.graph.edges().count() != 0 {
+            return false
+        }
+        true
+    }
+
 }
 
 impl VCInstance {
