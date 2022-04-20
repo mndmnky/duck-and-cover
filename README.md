@@ -34,7 +34,7 @@ A solver for the vertex cover problem. This library provides algorithms and data
 ### 1.0.2
 * Fixed bug in `finallize_solution()`.
 * Improved `branch_and_reduce()`.
-* Test single link rule.
+* Fix output format to fit the PACE19 challenge format.
 
 
 ## Todo 

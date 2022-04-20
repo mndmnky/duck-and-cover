@@ -383,4 +383,5 @@ mod tests {
             assert_eq!(g2.greedy_max_clique().len(), 3);
         }
     }
+
 }

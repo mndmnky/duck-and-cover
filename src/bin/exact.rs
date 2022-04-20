@@ -12,6 +12,7 @@ pub fn main() -> Result<(), Box<dyn error::Error>> {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
     let graph = DyUGraph::read_gr(stdin)?;
+    let n = graph.num_nodes();
     let mut vci = VCInstance::new(graph);
     let org = vci.clone();
     let priority = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique];
@@ -22,6 +23,6 @@ pub fn main() -> Result<(), Box<dyn error::Error>> {
         return Err(Box::new(ProcessingError::InvalidSolution));
     }
 
-    VCInstance::write_solution(&resu, &mut stdout)?;
+    VCInstance::write_solution(n, &resu, &mut stdout)?;
     Ok(())
 }

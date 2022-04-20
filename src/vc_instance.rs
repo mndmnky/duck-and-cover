@@ -247,7 +247,8 @@ impl VCInstance {
 impl VCInstance {
     
     /// Writes a solution to a `Write` type.
-    pub fn write_solution<W: Write>(solution: &FxHashSet<usize>, mut out: W) -> Result<(), io::Error> { 
+    pub fn write_solution<W: Write>(n: usize, solution: &FxHashSet<usize>, mut out: W) -> Result<(), io::Error> { 
+        writeln!(out, "s vc {} {}", n, solution.len())?;
         for elem in solution {
             writeln!(out, "{}",elem + 1)?;
         }
