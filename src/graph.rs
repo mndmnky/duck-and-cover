@@ -114,6 +114,21 @@ impl DyUGraph {
         false 
     }
 
+    /// Checks if an edge exists between `set`.
+    pub fn has_edge(&self, set: &FxHashSet<usize>) -> bool {
+        let mut mut_set = set.clone();
+        while mut_set.len() > 1 {
+            let next = *mut_set.iter().next().expect("`mut_set` is not empty");
+            mut_set.remove(&next);
+            if let Some(neighbors) = self.neighbors(next) {
+                if mut_set.intersection(&neighbors).count() > 0 {
+                    return true
+                }
+            }
+        }
+        false
+    }
+
     /// Checks if `self` is empty (holds no undeleted nodes).
     pub fn is_empty(&self) -> bool {
         self.num_nodes() == 0

@@ -12,6 +12,8 @@ A solver for the vertex cover problem. This library provides algorithms and data
 	* Removal of isolated nodes and nodes of degree 1. 
 	* Contraction of link nodes [^fn1].
 	* Reduction of Cliques [^fn2].
+	* Twin node rule [^fn3] extended by triplets.
+	* Unconfined node rule as described in [^fn4], here dubbed `dominion` rule.
 
 ### Heuristics and Approximations
 * Algorithms to compute initial solutions, upper- and lower bounds. These include:
@@ -36,15 +38,17 @@ A solver for the vertex cover problem. This library provides algorithms and data
 * Improved `branch_and_reduce()`.
 * Fix output format to fit the PACE19 challenge format.
 
+### 1.1.0
+* Twin rule
+* Dominion rule
 
 ## Todo 
 
 ### 1.?.?
+* Extend dominion rule with diamond.
 * Reductions:
-	* Twin rule 
 	* Crown rule 
 	* LP or Flow rule 
-	* Unconfined vertices/Diamond rule 
 * Heuristics:
 	* Special weight heuristics 
 * Branch-and-reduce:
@@ -58,3 +62,6 @@ A solver for the vertex cover problem. This library provides algorithms and data
 
 [^fn2]: Butenko, Sergiy, et al. "Finding maximum independent sets in graphs arising from coding theory." Proceedings of the 2002 ACM symposium on Applied computing. 2002.
 
+[^fn3]: Xiao, Mingyu, and Hiroshi Nagamochi. "Confining sets and avoiding bottleneck cases: A simple maximum independent set algorithm in degree-3 graphs." Theoretical Computer Science 469 (2013): 92-104.
+
+[^fn4]: Akiba, Takuya, and Yoichi Iwata. "Branch-and-reduce exponential/FPT algorithms in practice: A case study of vertex cover." Theoretical Computer Science 609 (2016): 211-225.
