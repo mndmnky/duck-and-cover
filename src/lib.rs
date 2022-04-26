@@ -4,3 +4,4 @@ pub mod vc_instance;
 pub mod kernelization;
 pub mod heuristics;
 pub mod bounded_search;
+pub mod bipart_flow;

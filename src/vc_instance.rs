@@ -76,6 +76,19 @@ impl VCInstance {
         Ok(())
     }
 
+    /// Removes all nodes in `node_set` from `self.graph`. 
+    /// Returns `Ok` and records the alteration if all nodes were removed, returns a `ProcessingError` otherwise.
+    pub fn delete_all_nodes(&mut self, node_set: &FxHashSet<usize>) -> Result<(), ProcessingError> {
+        for node in node_set {
+            if let Some(old_neighbors) = self.graph.delete_node(*node) {
+                self.alterations.push(Alteration::DeleteNode(*node, old_neighbors.clone()));
+            } else {
+                return Err(ProcessingError::InvalidParameter("Given node set was not completely contained in the graph.".to_owned()))
+            }
+        }
+        Ok(())
+    }
+
     /// Removes `node` from `self.graph`. 
     /// Returns `true` and records the alteration if a node was removed, returns `false` otherwise.
     pub fn delete_node(&mut self, node: usize) -> bool {

@@ -1,6 +1,7 @@
 use crate::vc_instance::VCInstance;
-use fxhash::FxHashSet;
-use std::collections::HashSet;
+use fxhash::{FxHashSet, FxHashMap};
+use std::collections::{HashSet, HashMap};
+use crate::bipart_flow::BipartFlowNet;
 
 pub const FAST_RULES: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode];
 pub const ALL_RULES_FAST_FIRST: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique];
@@ -11,6 +12,7 @@ pub enum Rule {
     Clique,
     Twins,
     Dominion,
+    Flow,
 }
 
 impl VCInstance {
@@ -170,6 +172,19 @@ impl VCInstance {
         false
     }
 
+    /// Applies the `flow-rule`, returns true if at least one node was removed.
+    pub fn flow_rule(&mut self) -> bool {
+        let mut flow_net: BipartFlowNet = self.graph.clone().into();
+        if let Some((ins, outs)) = flow_net.compute_full_and_empty_nodes() {
+            let real_ins = ins.iter().map(|id| flow_net.names[*id]).collect(); 
+            let real_outs = outs.iter().map(|id| flow_net.names[*id]).collect(); 
+            self.add_all_to_solution(&real_ins).expect("All nodes in `ins` are in `self.graph`");
+            self.delete_all_nodes(&real_outs).expect("All nodes in `outs` are in `self.graph`");
+            return true
+        }
+        false
+    }
+
     /// Exhaustivly applies the rules given in `priority_list` in the given priority order. If at
     /// any point (but after the first rule) a rule altered the graph, the priority list is
     /// traversed from the start.
@@ -199,6 +214,11 @@ impl VCInstance {
                     }
                     Rule::Dominion => {
                         if self.dominion_rule() {
+                            continue 'outer
+                        }
+                    }
+                    Rule::Flow => {
+                        if self.flow_rule() {
                             continue 'outer
                         }
                     }

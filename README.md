@@ -14,6 +14,7 @@ A solver for the vertex cover problem. This library provides algorithms and data
 	* Reduction of Cliques [^fn2].
 	* Twin node rule [^fn3] extended by triplets.
 	* Unconfined node rule as described in [^fn4], here dubbed `dominion` rule.
+	* Network flow rule as described in [^fn5].
 
 ### Heuristics and Approximations
 * Algorithms to compute initial solutions, upper- and lower bounds. These include:
@@ -42,13 +43,16 @@ A solver for the vertex cover problem. This library provides algorithms and data
 * Twin rule
 * Dominion rule
 
+### 1.2.0-test
+* Network flow rule
+
 ## Todo 
 
 ### 1.?.?
 * Extend dominion rule with diamond.
 * Reductions:
 	* Crown rule 
-	* LP or Flow rule 
+	* LP? 
 * Heuristics:
 	* Special weight heuristics 
 * Branch-and-reduce:
@@ -65,3 +69,5 @@ A solver for the vertex cover problem. This library provides algorithms and data
 [^fn3]: Xiao, Mingyu, and Hiroshi Nagamochi. "Confining sets and avoiding bottleneck cases: A simple maximum independent set algorithm in degree-3 graphs." Theoretical Computer Science 469 (2013): 92-104.
 
 [^fn4]: Akiba, Takuya, and Yoichi Iwata. "Branch-and-reduce exponential/FPT algorithms in practice: A case study of vertex cover." Theoretical Computer Science 609 (2016): 211-225.
+
+[^fn5]: Abu-Khzam, Faisal N., et al. "Kernelization algorithms for the vertex cover problem." (2017).
