@@ -5,6 +5,8 @@ use fxhash::FxHashSet;
 use std::io::BufRead;
 use crate::cust_error::ImportError;
 use std::cmp::min;
+use rand::{thread_rng, Rng};
+use std::collections::HashSet;
 
 /// A simple undirected graph datastructure that supports dynamic behaviour.
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -51,6 +53,16 @@ impl DyUGraph {
         neighbors.map(|neighs| set.intersection(&neighs).copied().collect())
     }
 
+    /// Returns the open neighborhood of `set`.
+    pub fn open_neighborhood_of_set(&self, set: &FxHashSet<usize>) -> FxHashSet<usize> {
+        set.iter()
+            .filter(|node| self.adj_list[**node].is_some())
+            .flat_map(|node| {
+                let neighs = self.neighbors(*node).as_ref().expect("`node` exists").clone();
+                neighs.difference(set).copied().collect::<Vec<_>>()
+        }).collect()
+    }
+
     /// Returns the degree of `node`, or `None` if `node` was deleted.
     pub fn degree(&self, node: usize) -> Option<usize> {
         self.adj_list[node].clone().map(|neighbors| neighbors.len())
@@ -58,7 +70,21 @@ impl DyUGraph {
 
     /// Returns the node with the highest degree.
     pub fn max_degree_node(&self) -> Option<usize> {
-        self.nodes().max_by_key(|node| self.degree(*node).expect("`node` exists"))
+        self.nodes().max_by_key(|node| self.degree(*node).expect("`node` exists")) }
+
+    /// Returns the `x` nodes and their neighbors with the highest degree. If only `y` < `x` nodes remain in `self`
+    /// returns the top `y` nodes (and neighbors) instead.
+    pub fn max_x_degree_node_neighbors(&self, x: usize) -> Vec<(usize, FxHashSet<usize>)> {
+        let mut nn: Vec<(usize, FxHashSet<usize>)> = self
+            .nodes()
+            .map(|node| (node, self.neighbors(node).as_ref().expect("`node` exists").clone()))
+            .collect();
+        nn.sort_unstable_by_key(|(_, neighbors)| -(neighbors.len() as isize));
+        if nn.len() < x {
+            return nn
+        } else {
+            return nn[0..x].into()
+        }
     }
 
     /// Returns the node with the highest degree and its neighbors or `None` if no node exists.
@@ -206,6 +232,74 @@ impl DyUGraph {
         }
         false
     }
+
+    /// Returns a random neighbor of `node`.
+    pub fn random_neighbor(&self, node: usize) -> Option<usize> {
+        if let Some(neighs) = self.neighbors(node) {
+            let neighs_vec: Vec<&usize> = neighs.iter().collect();
+            if neighs_vec.len() != 0 {
+                let id = thread_rng().gen_range(0..neighs.len());
+                return Some(*neighs_vec[id])
+            }
+        }
+        None
+    }
+
+    /// Returns a random neighbor of `node` that is not in `set`.
+    pub fn random_neighbor_not_in(&self, node: usize, set: &FxHashSet<usize>) -> Option<usize> {
+        if let Some(neighs) = self.neighbors(node) {
+            let neighs_vec: Vec<&usize> = neighs.difference(set).collect();
+            if neighs_vec.len() != 0 {
+                let id = thread_rng().gen_range(0..neighs_vec.len());
+                return Some(*neighs_vec[id])
+            }
+        }
+        None
+    }
+
+    /// Returns the unmatched nodes of a random maximal matching of `self`.
+    pub fn unmatched_of_random_matching(&self) -> FxHashSet<usize> {
+        let mut nodes: Vec<usize> = self.nodes().collect();
+        let mut matched: FxHashSet<usize> = FxHashSet::default();
+        let mut outsiders: FxHashSet<usize> = FxHashSet::default();
+        while !nodes.is_empty() {
+            let id = thread_rng().gen_range(0..nodes.len());
+            let node = nodes.swap_remove(id);
+            if matched.contains(&node) {
+                continue
+            }
+            if let Some(neighbor) = self.random_neighbor_not_in(node, &matched) {
+                matched.insert(neighbor);
+                matched.insert(node);
+                // to get the actual matching:
+                //matching.insert((node, neighbor));
+            } else {
+                outsiders.insert(node);
+            }
+        }
+        outsiders
+    }
+
+    /// Returns the matching and the unmatched nodes of a random maximal matching of the edges
+    /// between `set` and its neighbors.
+    pub fn random_matching_between_set_and_neighbors(&self, set: &FxHashSet<usize>) -> (FxHashSet<usize>, HashSet<(usize, usize)>) {
+        let mut no_match = set.clone();
+        let mut set_vec: Vec<&usize> = set.iter().collect();
+        let mut outsiders: FxHashSet<usize> = FxHashSet::default();
+        let mut matching: HashSet<(usize, usize)> = HashSet::new();
+        while !set_vec.is_empty() {
+            let id = thread_rng().gen_range(0..set_vec.len());
+            let node = set_vec.swap_remove(id);
+            if let Some(neighbor) = self.random_neighbor_not_in(*node, &no_match) {
+                no_match.insert(neighbor);
+                matching.insert((*node, neighbor));
+            } else {
+                outsiders.insert(*node);
+            }
+        }
+        (outsiders, matching)
+    }
+
 }
 
 // Dynamic functions

@@ -43,8 +43,13 @@ A solver for the vertex cover problem. This library provides algorithms and data
 * Twin rule
 * Dominion rule
 
-### 1.2.0-test
+### 1.2.0
 * Network flow rule
+
+### 1.3.0-test 
+* Added diamond case to dominion rule.
+* Local `k` node rule
+* Crown rule
 
 ## Todo 
 

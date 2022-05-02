@@ -15,7 +15,7 @@ pub fn main() -> Result<(), Box<dyn error::Error>> {
     let n = graph.num_nodes();
     let mut vci = VCInstance::new(graph);
     let org = vci.clone();
-    let priority = &[Rule::SimpleRules, Rule::LinkNode, Rule::Twins, Rule::Dominion, Rule::Clique, Rule::Flow];
+    let priority = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique, Rule::Twins, Rule::Dominion, Rule::Crown100, Rule::Flow, Rule::LocalK10];
     let resu = vci.branch_and_reduce(priority)?;
 
     // Validate
