@@ -432,7 +432,7 @@ impl DyUGraph {
     }
    
     /// Reads a `.gr` input and creates a `DyUGraph`.
-    pub fn from_edge_iter<R: Iterator<Item=(usize,usize)>>(edges: R, num_nodes: usize) -> Result<Self, ImportError> {
+    pub fn from_edge_iter<R: Iterator<Item=(usize,usize)>>(edges: R, num_nodes: usize) -> Self {
         let mut adj_list: Vec<Option<FxHashSet<usize>>> = vec![None; num_nodes];
         for edge in edges {
             if let Some(ref mut neigh) = adj_list[edge.0] {
@@ -446,9 +446,9 @@ impl DyUGraph {
                 adj_list[edge.1] = Some(vec![edge.0].into_iter().collect::<FxHashSet<usize>>());
             }
         }
-        Ok(DyUGraph {
+        DyUGraph {
             adj_list,
-        })
+        }
     }
 
     /// Splits `self` into its connected components.

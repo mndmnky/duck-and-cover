@@ -4,7 +4,7 @@
 use std::error;
 use std::io;
 
-use duck_and_cover::{graph::DyUGraph, vc_instance::VCInstance, kernelization::Rule, cust_error::ProcessingError};
+use duck_and_cover::{graph::DyUGraph, vc_instance::VCInstance, kernelization::*, cust_error::ProcessingError};
 
 pub fn main() -> Result<(), Box<dyn error::Error>> {
     let stdin = io::stdin();
@@ -15,8 +15,7 @@ pub fn main() -> Result<(), Box<dyn error::Error>> {
     let n = graph.num_nodes();
     let mut vci = VCInstance::new(graph);
     let org = vci.clone();
-    let priority = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique, Rule::Twins, Rule::Dominion, Rule::Crown100, Rule::Flow, Rule::LocalK10];
-    let resu = vci.branch_and_reduce(priority)?;
+    let resu = vci.branch_and_reduce(RECOMMENDED)?;
 
     // Validate
     if !org.validate_solution(&resu) {
