@@ -46,7 +46,7 @@ A solver for the vertex cover problem. This library provides algorithms and data
 ### 1.2.0
 * Network flow rule
 
-### 1.3.0-test 
+### 1.3.0 
 * Added diamond case to dominion rule.
 * Local `k` node rule
 * Crown rule
@@ -54,7 +54,6 @@ A solver for the vertex cover problem. This library provides algorithms and data
 ## Todo 
 
 ### 1.?.?
-* Extend dominion rule with diamond.
 * Reductions:
 	* Crown rule 
 	* LP? 
