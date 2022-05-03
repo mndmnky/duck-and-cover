@@ -51,6 +51,9 @@ A solver for the vertex cover problem. This library provides algorithms and data
 * Local `k` node rule
 * Crown rule
 
+### 1.3.1 
+* `DyUGraph.from_edge_iter()`
+
 ## Todo 
 
 ### 1.?.?
