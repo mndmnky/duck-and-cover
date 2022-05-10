@@ -25,6 +25,8 @@ impl VCInstance {
     ///    and all of its neighbors.
     /// After each branch the algorithm rebuilds the graph and continues to look for a better
     /// solution.
+    ///
+    /// A `ProcessingError` should only be thrown if ... TODO
     pub fn branch_and_reduce(&mut self, priority_list: &[Rule]) -> Result<FxHashSet<usize>, ProcessingError> {
         self.compute_and_set_upper_lower(priority_list)?;
         if let Some(solution) = self.branch_and_reduce_inner(priority_list) {

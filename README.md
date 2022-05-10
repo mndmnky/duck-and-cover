@@ -15,6 +15,7 @@ A solver for the vertex cover problem. This library provides algorithms and data
 	* Twin node rule [^fn3] extended by triplets.
 	* Unconfined node rule as described in [^fn4], here dubbed `dominion` rule.
 	* Network flow rule as described in [^fn5].
+	* Alternatives (currently only funnel) as described in [^fn6].
 
 ### Heuristics and Approximations
 * Algorithms to compute initial solutions, upper- and lower bounds. These include:
@@ -54,6 +55,10 @@ A solver for the vertex cover problem. This library provides algorithms and data
 ### 1.3.1 
 * `DyUGraph.from_edge_iter()`
 
+### 1.4.0-test
+* Core rule
+* Funnel rule
+
 ## Todo 
 
 ### 1.?.?
@@ -78,3 +83,5 @@ A solver for the vertex cover problem. This library provides algorithms and data
 [^fn4]: Akiba, Takuya, and Yoichi Iwata. "Branch-and-reduce exponential/FPT algorithms in practice: A case study of vertex cover." Theoretical Computer Science 609 (2016): 211-225.
 
 [^fn5]: Abu-Khzam, Faisal N., et al. "Kernelization algorithms for the vertex cover problem." (2017).
+
+[^fn6]: Xiao, Mingyu, and Hiroshi Nagamochi. "Confining sets and avoiding bottleneck cases: A simple maximum independent set algorithm in degree-3 graphs." Theoretical Computer Science 469 (2013): 92-104.

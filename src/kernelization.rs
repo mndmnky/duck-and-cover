@@ -1,16 +1,36 @@
+//! This module includes various kinds of reduction rules for the vertex cover problem.
+//! These rules include:
+//! * `SimpleRules` that remove isolated nodes, and nodes of degree 1 while adding their neighbor
+//! to the solution.
+//! * `LinkNode`-rule which contracts nodes of degree 2. 
+//! * `Clique`-rule which looks for vertices `v` which neighbors induce a complete graph, and then adds
+//! all its neighbors to the solution and removes `v` from the graph.
+//! * `Twins`-rule:
+//!     Old version: Looks for nodes of degree 3 with the same neighborhood. If two were found with
+//!     an edge inside the neighborhood, the neighborhood is added to the solution. If tripplets
+//!     were found, adds the neighborhood to the solution.
+//!     New version: Only look for twins, add the neighborhood if an edge exists or use a
+//!     placeholder otherwise.
+//! * `Dominion`-rule: See literature cited in the documentation.
+//! * `Flow`-rule: See literature cited in the documentation. This rule apparently makes the
+//! `Crown`-rule.
+//! * TODO:
+//!
+
 use crate::vc_instance::VCInstance;
-use fxhash::{FxHashSet, FxHashMap};
-use std::collections::{HashSet, HashMap};
+use fxhash::FxHashSet;
+use std::collections::HashSet;
 use crate::bipart_flow::BipartFlowNet;
 
 pub const FAST_RULES: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode];
 pub const ALL_RULES_BUT_LOCAL_FAST_FIRST: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique, Rule::Twins, Rule::Dominion, Rule::Crown1, Rule::Flow];
-pub const RECOMMENDED: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique, Rule::Twins, Rule::Dominion, Rule::Crown100, Rule::Flow, Rule::LocalK10];
+pub const RECOMMENDED: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Twins, Rule::Funnel, Rule::Dominion, Rule::Crown100, Rule::Flow, Rule::LocalK10];
 
 pub enum Rule {
     SimpleRules,
     LinkNode,
     Clique,
+    Funnel,
     Twins,
     Dominion,
     Flow,
@@ -85,6 +105,79 @@ impl VCInstance {
         changed
     }
 
+    /// Applies the funnel rule.
+    /// This implies the clique rule.
+    pub fn funnel_rule(&mut self) -> bool {
+        let nodes = self.graph.nodes().collect::<Vec<_>>();
+        let mut u1 = None;
+        'outer: for node in nodes {
+            let mut neighborhood = self.graph.neighbors(node).as_ref().expect("`node` exists").clone();
+            let degree = neighborhood.len();
+            assert!(degree > 1); // Simple rules have to be applied first.
+            let mut u1_shared = None;
+            // TODO no need to go for a u2 if u1 shares less then degree - 2 neighbors
+            for neigh in &neighborhood {
+                let shared = &neighborhood.intersection(self.graph.neighbors(*neigh).as_ref().expect("`neigh` exists")).count();
+                if *shared < degree - 1 {
+                    u1_shared = Some(*shared);
+                    u1 = Some(*neigh);
+                    break
+                }
+            }
+            // Clique rule:
+            if u1.is_none() {
+                self.add_all_to_solution(&neighborhood).expect("all of `neighborhood` exists");
+                self.delete_node(node);
+                return true
+            } else {
+                let u1 = u1.expect("is some");
+                let u1_shared = u1_shared.expect("is some");
+                let mut u2 = None;
+                // Look for a neighbor of v that is not connected to u1 (and is not u1)
+                neighborhood.remove(&u1);
+                for neigh in &neighborhood {
+                    if !self.graph.edge_exists((u1,*neigh)) {
+                        u2 = Some(*neigh);
+                        break
+                    }
+                }
+                let u2 = u2.expect("exists by definition of `u1`");
+                neighborhood.remove(&u2);
+                let u2_shared = neighborhood.intersection(self.graph.neighbors(u2).as_ref().expect("`u2` exists")).count();
+                if u2_shared < degree - 2 && u1_shared < degree - 2 {
+                    continue
+                }
+                for neigh in & neighborhood {
+                    let shared = &neighborhood.intersection(self.graph.neighbors(*neigh).as_ref().expect("`neigh` exists")).count();
+                    if *shared < degree - 3 {
+                        continue 'outer
+                    }
+                }
+                if u2_shared == degree - 2 {
+                    self.compute_alternative(&[node], &[u1]);
+                    return true
+                } else {
+                    self.compute_alternative(&[node], &[u2]);
+                    return true
+                }
+            }
+        }
+        false
+    }
+
+    /// Adds the shared neighborhood of the alternatives, and replaces the alternatives with edges
+    /// between their distinct neighbors.
+    fn compute_alternative(&mut self, a_set: &[usize], b_set: &[usize]) {
+        let a_set: FxHashSet<usize> = a_set.iter().copied().collect();
+        let b_set: FxHashSet<usize> = b_set.iter().copied().collect();
+        let mut a_neighbors: FxHashSet<usize> = self.graph.open_neighborhood_of_set(&a_set).difference(&b_set).copied().collect();
+        let mut b_neighbors = self.graph.open_neighborhood_of_set(&b_set).difference(&a_set).copied().collect();
+        let c_set: FxHashSet<_> = a_neighbors.intersection(&b_neighbors).copied().collect();
+        self.add_all_to_solution(&c_set).expect("All nodes in `c_set` exist");
+        c_set.iter().for_each(|v| {a_neighbors.remove(&v); b_neighbors.remove(&v);});
+        self.replace_alternatives(a_set, b_set, &a_neighbors, &b_neighbors).expect("Everything should be sound");
+    }
+
     /// Applies the clique rule (see documentation TODO) exhaustively by checking for each node
     /// `v` in `self.graph` if `v`s neighborhood is a clique. If this is given adds all neighbors
     /// of `v` to the solution and removes the neighborhood as well as `v`.
@@ -155,6 +248,27 @@ impl VCInstance {
                 }
             }
             return false
+        }
+        false
+    }
+
+    /// Looks for a vert
+    /// TODO: this is also just the simple case of the dominion rule
+    pub fn core_rule(&mut self) -> bool {
+        let nodes: Vec<usize> = self.graph.nodes().collect();
+        for node in nodes {
+            let mut marked: FxHashSet<usize> = vec![node].into_iter().collect();
+            let neighbors = self.graph.neighbors(node).as_ref().expect("`node` exists");
+            marked.extend(neighbors);
+            for neigh in neighbors {
+                for nn in self.graph.neighbors(*neigh).as_ref().expect("`neigh` exists") {
+                    if !marked.contains(&nn) {
+                        continue
+                    }
+                    self.add_to_solution(node);
+                    return true
+                }
+            }
         }
         false
     }
@@ -295,6 +409,11 @@ impl VCInstance {
                     },
                     Rule::Clique => {
                         if self.exhaustive_clique_rule() {
+                            continue 'outer
+                        }
+                    },
+                    Rule::Funnel => {
+                        if self.funnel_rule() {
                             continue 'outer
                         }
                     },
@@ -485,6 +604,20 @@ mod tests {
         }
         let pos_sol_len: FxHashSet<usize> = vec![0,3,5].into_iter().collect();
         assert!(pos_sol_len.contains(&ins.solution.len()));
+    }
+
+    #[test]
+    fn funnel_test() {
+        let gr = Cursor::new("p td 11 17\n4 2\n4 11\n2 3\n3 1\n3 5\n\
+                              1 5\n1 6\n1 7\n5 6\n5 7\n6 7\n6 8\n6 10\n\
+                              7 9\n7 11\n8 9\n10 11\n");
+        let graph = DyUGraph::read_gr(gr);
+        assert!(graph.is_ok());
+        let mut ins = VCInstance::new(graph.unwrap());
+        assert!(ins.funnel_rule());
+        assert!(ins.contract_link_nodes());
+        assert!(ins.finallize_solution_in_place().is_ok());
+        assert_eq!(ins.solution, vec![0,1,4,5,8,10].into_iter().collect::<FxHashSet<usize>>());
     }
 
 }

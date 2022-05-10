@@ -2,7 +2,7 @@ use crate::graph::DyUGraph;
 use fxhash::FxHashSet;
 use crate::kernelization::Rule;
 use crate::cust_error::ProcessingError;
-use std::io::{Write};
+use std::io::Write;
 use std::io;
 
 #[derive(Debug, Eq, PartialEq, Clone)]
@@ -12,9 +12,9 @@ pub struct VCInstance {
     pub lower_bound: Option<usize>,
     pub upper_bound: Option<usize>,
     pub current_best: Option<FxHashSet<usize>>,
-    /// If `Item.0` is in the final solution, convert the placeholder to `Item.1.0`, else convert
-    /// to `Item.1.1`.
-    conversion: Vec<(usize, (usize, usize))>,
+    /// If any element in `Item.0` is not in the solution, convert the placeholder to `Item.1.0`,
+    /// or else to `Item.1.1`.
+    conversion: Vec<(FxHashSet<usize>, (usize, usize))>,
     /// Records changes to the adjacency list.
     alterations: Vec<Alteration>,
     /// An id register, that helps to control how much of the graph is rebuild.
@@ -34,6 +34,7 @@ enum Alteration {
         old_from: FxHashSet<usize>, 
         new_into: FxHashSet<usize>
     },
+    SubstitudeAlternatives(Vec<(usize, usize)>, usize),
 }
 
 impl VCInstance {
@@ -112,13 +113,30 @@ impl VCInstance {
             // Inserts a placeholder into the solution. Depending on the presense of `into` in the
             // final solution, this will either become `link` or `from`.
             self.solution.insert(self.graph.num_reserved() + self.conversion.len());
-            self.conversion.push((into, (from, link)));
+            self.conversion.push((vec![into].into_iter().collect(), (from, link)));
             self.alterations.push(Alteration::ContractLink{ link, from, into, old_from, new_into });
             return Ok(())
         } else {
             self.graph.reinsert_node(link, &vec![from, into].iter().copied().collect());
             return Err(ProcessingError::GraphError("`from` could not be merged into `into`".to_owned()))
         }
+    }
+
+    /// Removes the two alternative sets `a_set` and `b_set`, adds `a_set.len()` many placeholder
+    /// to the solution, and adds missing edges between the two node disjunct sets `a_neighbors`
+    /// and `b_neighbors`.
+    pub (crate) fn replace_alternatives(&mut self, a_set: FxHashSet<usize>, b_set: FxHashSet<usize>, a_neighbors: &FxHashSet<usize>, b_neighbors: &FxHashSet<usize>) -> Result<(), ProcessingError> {
+        self.delete_all_nodes(&a_set)?;
+        self.delete_all_nodes(&b_set)?;
+        let missing_edges = self.graph.add_all_missing_edges_between(a_neighbors, b_neighbors)?;
+        let mut b_iter = b_set.iter();
+        for &a in &a_set {
+            let b = b_iter.next().expect("`a_set.len()` == `b_set.len()`");
+            self.solution.insert(self.graph.num_reserved() + self.conversion.len());
+            self.conversion.push((a_neighbors.clone(), (*b, a)));
+        }
+        self.alterations.push(Alteration::SubstitudeAlternatives(missing_edges, a_set.len()));
+        Ok(())
     }
 
     /// Computes and sets a upper and a lower bound.
@@ -176,7 +194,7 @@ impl VCInstance {
                 return Err(ProcessingError::ConversionError)
             }
             let convers = self.conversion.pop().expect("`self.conversion` is not empty");
-            if self.solution.contains(&convers.0) {
+            if convers.0.iter().all(|node| self.solution.contains(&node)) {
                 self.solution.insert(convers.1.0);
             } else {
                 self.solution.insert(convers.1.1);
@@ -198,7 +216,7 @@ impl VCInstance {
                 return Err(ProcessingError::ConversionError)
             }
             let convers = conversions.pop().expect("`self.conversion` is not empty");
-            if new_sol.contains(&convers.0) {
+            if convers.0.iter().all(|node| new_sol.contains(&node)) {
                 new_sol.insert(convers.1.0);
             } else {
                 new_sol.insert(convers.1.1);
@@ -227,6 +245,14 @@ impl VCInstance {
                     self.graph.delete_neighbors(into, &new_into);
                     self.graph.reinsert_node(from, &old_from);
                     self.graph.reinsert_node(link, &vec![into, from].iter().copied().collect());
+                },
+                Alteration::SubstitudeAlternatives(missing_edges, set_len) => {
+                    for _ in 0..set_len {
+                        self.conversion.pop();
+                        let placeholder = self.graph.num_reserved() + self.conversion.len();
+                        self.solution.remove(&placeholder);
+                    }
+                    self.graph.delete_edges(&missing_edges);
                 },
             }
         }

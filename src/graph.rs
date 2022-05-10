@@ -3,7 +3,7 @@
 
 use fxhash::FxHashSet;
 use std::io::BufRead;
-use crate::cust_error::ImportError;
+use crate::cust_error::{ImportError, ProcessingError};
 use std::cmp::min;
 use rand::{thread_rng, Rng};
 use std::collections::HashSet;
@@ -383,6 +383,59 @@ impl DyUGraph {
                 nn.remove(&neigh);
             }
         }
+    }
+
+    /// Inserts the edge `edge` to the graph.
+    pub fn insert_edge(&mut self, edge: &(usize, usize)) -> Result<(), ProcessingError> {
+        if let Some(ref mut nn) = self.adj_list[edge.0] {
+            nn.insert(edge.1);
+        } else {
+            return Err(ProcessingError::GraphError("Node that should exists doesn't".to_string()));
+        }
+        if let Some(ref mut nn) = self.adj_list[edge.1] {
+            nn.insert(edge.0);
+        } else {
+            return Err(ProcessingError::GraphError("Node that should exists doesn't".to_string()));
+        }
+        Ok(())
+    }
+
+    /// Removes all edges in `edges`.
+    pub fn delete_edges(&mut self, edges: &Vec<(usize, usize)>) {
+        let mut edges2 = edges.clone();
+        edges2.extend(edges.into_iter().map(|(a, b)| (*b,*a)));
+        let mut edge_iter = edges.into_iter();
+        loop {
+            if let Some((src,trg)) = edge_iter.next() {
+                if let Some(ref mut nn) = self.adj_list[*src] {
+                    nn.remove(&trg);
+                }
+            } else {
+                break
+            }
+        }
+    }
+
+    /// Adds all missing edges between two given sets.
+    ///
+    /// Throws a `ProcessingError` if `set_a` and `set_b` are not node disjunct, or any node in
+    /// either set does not exist.
+    pub fn add_all_missing_edges_between(&mut self, set_a: &FxHashSet<usize>, set_b: &FxHashSet<usize>) -> Result<Vec<(usize, usize)>, ProcessingError> {
+        let mut missing_edges: Vec<(usize, usize)> = Vec::new();
+        for a in set_a {
+            for b in set_b {
+                if a == b {
+                    return Err(ProcessingError::InvalidParameter("`set_a` and `set_b` are not node disjunct".to_string()))
+                }
+                if !self.edge_exists((*a,*b)) {
+                    missing_edges.push((*a,*b));
+                }
+            }
+        }
+        for edge in &missing_edges {
+            self.insert_edge(edge)?;
+        }
+        Ok(missing_edges)
     }
 
 }
