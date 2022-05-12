@@ -34,8 +34,19 @@ enum Alteration {
         old_from: FxHashSet<usize>, 
         new_into: FxHashSet<usize>
     },
+    /// Contract `twins` and merged `trips` into the single node `trips[2]`.
+    /// `old_from1` holds the old neighbors of `trips[0]`, `old_from2` resp. for `trips[1]`,
+    /// `new_into` the new neighbors of `trips[2]`.
+    ContractTwins{
+        twins: [usize; 2],
+        trips: [usize; 3],
+        old_from1: FxHashSet<usize>,
+        old_from2: FxHashSet<usize>,
+        new_into: FxHashSet<usize>,
+    },
     SubstitudeAlternatives(Vec<(usize, usize)>, usize),
 }
+
 
 impl VCInstance {
 
@@ -118,6 +129,29 @@ impl VCInstance {
             return Ok(())
         } else {
             self.graph.reinsert_node(link, &vec![from, into].iter().copied().collect());
+            return Err(ProcessingError::GraphError("`from` could not be merged into `into`".to_owned()))
+        }
+    }
+
+    /// Contracts twin nodes `twins` and their neighbors `trips` into a single node, only done if
+    /// there is no edge between `trips` (not checked).
+    pub (crate) fn contract_twins(&mut self, trips: [usize; 3], twins: [usize; 2]) -> Result<(), ProcessingError> {
+        if self.graph.delete_node(twins[0]).is_none() || 
+            self.graph.delete_node(twins[1]).is_none() {
+            return Err(ProcessingError::InvalidParameter("`link` was not contained in the graph.".to_owned()))
+        }
+        if let Some((old_from1, old_from2, new_into)) = self.graph.merge_triples((trips[0], trips[1]), trips[2]) {
+            // Inserts a placeholder into the solution. Depending on the presense of `into` in the
+            // final solution, this will either become `link` or `from`.
+            self.solution.insert(self.graph.num_reserved() + self.conversion.len());
+            self.conversion.push((vec![trips[2]].into_iter().collect(), (trips[0], twins[0])));
+            self.solution.insert(self.graph.num_reserved() + self.conversion.len());
+            self.conversion.push((vec![trips[2]].into_iter().collect(), (trips[1], twins[1])));
+            self.alterations.push(Alteration::ContractTwins{ twins, trips, old_from1, old_from2, new_into });
+            return Ok(())
+        } else {
+            self.graph.reinsert_node(twins[0], &trips.iter().copied().collect());
+            self.graph.reinsert_node(twins[1], &trips.iter().copied().collect());
             return Err(ProcessingError::GraphError("`from` could not be merged into `into`".to_owned()))
         }
     }
@@ -245,6 +279,19 @@ impl VCInstance {
                     self.graph.delete_neighbors(into, &new_into);
                     self.graph.reinsert_node(from, &old_from);
                     self.graph.reinsert_node(link, &vec![into, from].iter().copied().collect());
+                },
+                Alteration::ContractTwins { twins, trips, old_from1, old_from2, new_into} => {
+                    self.conversion.pop();
+                    let placeholder = self.graph.num_reserved() + self.conversion.len();
+                    self.solution.remove(&placeholder);
+                    self.conversion.pop();
+                    let placeholder = self.graph.num_reserved() + self.conversion.len();
+                    self.solution.remove(&placeholder);
+                    self.graph.delete_neighbors(trips[2], &new_into);
+                    self.graph.reinsert_node(trips[0], &old_from1);
+                    self.graph.reinsert_node(trips[1], &old_from2);
+                    self.graph.reinsert_node(twins[0], &trips.iter().copied().collect());
+                    self.graph.reinsert_node(twins[1], &trips.iter().copied().collect());
                 },
                 Alteration::SubstitudeAlternatives(missing_edges, set_len) => {
                     for _ in 0..set_len {

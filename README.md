@@ -12,10 +12,10 @@ A solver for the vertex cover problem. This library provides algorithms and data
 	* Removal of isolated nodes and nodes of degree 1. 
 	* Contraction of link nodes [^fn1].
 	* Reduction of Cliques [^fn2].
-	* Twin node rule [^fn3] extended by triplets.
+	* Twin node rule [^fn3]. (with contraction TODO: cite)
 	* Unconfined node rule as described in [^fn4], here dubbed `dominion` rule.
 	* Network flow rule as described in [^fn5].
-	* Alternatives (currently only funnel) as described in [^fn6].
+	* Alternatives (funnel & desk) as described in [^fn6].
 
 ### Heuristics and Approximations
 * Algorithms to compute initial solutions, upper- and lower bounds. These include:
@@ -58,12 +58,13 @@ A solver for the vertex cover problem. This library provides algorithms and data
 ### 1.4.0-test
 * Core rule
 * Funnel rule
+* Desk rule
+* Improved twin rule
 
 ## Todo 
 
 ### 1.?.?
 * Reductions:
-	* Crown rule 
 	* LP? 
 * Heuristics:
 	* Special weight heuristics 

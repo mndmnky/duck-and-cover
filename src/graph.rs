@@ -371,6 +371,41 @@ impl DyUGraph {
         return None
     }
 
+    /// Merge `froms` into `into`. 
+    /// Returns the old neighbors of both `froms` and the new neighbors of `into`, or `None` if either
+    /// `froms` or `into` was already deleted.
+    pub fn merge_triples(&mut self, froms: (usize, usize), into: usize) 
+        -> Option<(FxHashSet<usize>, FxHashSet<usize>, FxHashSet<usize>)> {
+        if let Some(neighbors1) = self.delete_node(froms.0) {
+            if let Some(neighbors2) = self.delete_node(froms.1) {
+                if let Some(add_neighs) = self.adj_list[into].as_mut() {
+                    // Find doubles
+                    let new_neighbors: FxHashSet<usize> = neighbors1
+                        .union(&neighbors2)
+                        .filter(|node| add_neighs.contains(node))
+                        .copied()
+                        .collect();
+                    // add neighbors (both sides)
+                    add_neighs.extend(&new_neighbors);
+                    for neigh in &new_neighbors {
+                        if let Some(ref mut nn) = self.adj_list[*neigh] {
+                            nn.insert(into);
+                        }
+                    }
+                    return Some((neighbors1, neighbors2, new_neighbors));
+                } else {
+                    self.reinsert_node(froms.0, &neighbors1);
+                    self.reinsert_node(froms.1, &neighbors2);
+                    return None
+                }
+            } else {
+                self.reinsert_node(froms.0, &neighbors1);
+                return None
+            }
+        }
+        return None
+    }
+
     /// Removes all the edges between `node` and the nodes in `neighbors`.
     pub fn delete_neighbors(&mut self, node: usize, neighbors: &FxHashSet<usize>) {
         for neigh in neighbors {

@@ -19,12 +19,12 @@
 
 use crate::vc_instance::VCInstance;
 use fxhash::FxHashSet;
-use std::collections::HashSet;
+use std::collections::HashMap;
 use crate::bipart_flow::BipartFlowNet;
 
 pub const FAST_RULES: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode];
 pub const ALL_RULES_BUT_LOCAL_FAST_FIRST: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique, Rule::Twins, Rule::Dominion, Rule::Crown1, Rule::Flow];
-pub const RECOMMENDED: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Twins, Rule::Funnel, Rule::Dominion, Rule::Crown100, Rule::Flow, Rule::LocalK10];
+pub const RECOMMENDED: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Twins, Rule::Funnel, Rule::Dominion, Rule::Desk, Rule::Crown100, Rule::Flow, Rule::LocalK10];
 
 pub enum Rule {
     SimpleRules,
@@ -33,6 +33,7 @@ pub enum Rule {
     Funnel,
     Twins,
     Dominion,
+    Desk,
     Flow,
     LocalK1,
     LocalK10,
@@ -165,6 +166,66 @@ impl VCInstance {
         false
     }
 
+    /// Applies the desk rule: 
+    /// A desk is a coordless cycle a1, b1, a2, b2 is called a desk if, for the sets A = {a1, a2}
+    /// and B = {b1, b2}, |N(A)/B| <= 2, |N(B)/A| <= 2 and N(A) \Cap N(B) = \emptyset. 
+    /// A and B are alternatives.
+    pub fn desk_rule(&mut self) -> bool {
+        // Go over all nodes 
+        let mut a_set: Option<[usize; 2]> = None;
+        let mut b_set: Option<[usize; 2]> = None;
+        'outer: for node in self.graph.nodes() {
+            // Get neighbors
+            let neighbors = self.graph.neighbors(node).as_ref().expect("`node` exists");
+            // If degree not between 3 and 4: continue 
+            let degree = neighbors.len();
+            if degree < 3 || degree > 4 { continue }
+            let neighbor_vec: Vec<usize> = neighbors.iter().copied().collect();
+            // Go over all pairs of neighbrs with degree between 3 and 4:
+            for i in 0..degree {
+                let n1 = neighbor_vec[i];
+                let n1n = self.graph.neighbors(n1).as_ref().expect("`n1` exists");
+                let n1deg = n1n.len();
+                if n1deg < 3 || n1deg > 4 { continue }
+                if n1n.intersection(neighbors).count() != 0 { continue }
+                for j in (i+1)..degree {
+                    let n2 = neighbor_vec[j];
+                    let n2n = self.graph.neighbors(n2).as_ref().expect("`n1` exists");
+                    // If there is an edge between this pair: break 
+                    if n2n.contains(&n1) { continue }
+                    let n2deg = n2n.len();
+                    if n2deg < 3 || n2deg > 4 { continue }
+                    if n2n.intersection(neighbors).count() != 0 { continue }
+                    // Count their summed degree
+                    // if degree > 4: break 
+                    if n1n.union(n2n).count() > 4 { continue }
+                    // for all common neighbors c, not v and not connected to v:
+                    for c in n1n.intersection(n2n) {
+                        if c == &node { continue }
+                        if neighbors.contains(c) { continue }
+                        let cn = self.graph.neighbors(*c).as_ref().expect("`n1` exists");
+                        let cdeg = cn.len();
+                        if cdeg < 3 || cdeg > 4 { continue }
+                        if cn.union(neighbors).count() > 4 { continue }
+                        if n2n.intersection(cn).count() != 0 { continue }
+                        if n1n.intersection(cn).count() != 0 { continue }
+                        a_set = Some([node, *c]);
+                        b_set = Some([n1, n2]);
+                        break 'outer
+                    }
+
+                }
+            }
+        }
+        if let Some(a_set) = a_set {
+            let b_set = b_set.expect("Both are set, or neither");
+            self.compute_alternative(&a_set, &b_set);
+            true
+        } else {
+            false
+        }
+    }
+
     /// Adds the shared neighborhood of the alternatives, and replaces the alternatives with edges
     /// between their distinct neighbors.
     fn compute_alternative(&mut self, a_set: &[usize], b_set: &[usize]) {
@@ -203,29 +264,49 @@ impl VCInstance {
     /// `neighs` to the solution and returns. If `neighs` are already in `un_connects`, stores
     /// `neighs` also in `connects`.
     pub fn twin_rule(&mut self) -> bool {
-        let mut connects = HashSet::new();
-        let mut un_connects = HashSet::new();
-        let nodes = self.graph.nodes().collect::<Vec<usize>>();
-        for node in nodes {
+        let mut connects = HashMap::new();
+        let mut un_connects = HashMap::new();
+        let mut solution = None;
+        let mut merge = None;
+        let mut twins = None;
+        'outer: for node in self.graph.nodes() {
             if self.graph.degree(node).expect("`node` exists") == 3 {
                 let mut neighbors: Vec<usize> = self.graph.neighbors(node).as_ref().expect("`node` exists").iter().copied().collect();
                 neighbors.sort_unstable();
                 let neighs: [usize; 3] = [neighbors[0], neighbors[1], neighbors[2]];
-                if connects.contains(&neighs) {
-                    self.add_all_to_solution(&neighs.iter().copied().collect::<FxHashSet<usize>>()).expect("`neighs` are all in `self.graph`");
-                    return true
-                } else if un_connects.contains(&neighs) {
-                    connects.insert(neighs);
+                if connects.contains_key(&neighs) {
+                    let twin = connects.get(&neighs).expect("contains key `neighs`");
+                    solution = Some(neighs);
+                    twins = Some((node, *twin));
+                    break 'outer
+                } else if un_connects.contains_key(&neighs) {
+                    let twin = un_connects.get(&neighs).expect("contains key `neighs`");
+                    twins = Some((node, *twin));
+                    merge = Some(neighs);
+                    break 'outer
                 } else {
                     if self.graph.has_edge(&neighs.iter().copied().collect()) {
-                        connects.insert(neighs);
+                        connects.insert(neighs, node);
                     } else {
-                        un_connects.insert(neighs);
+                        un_connects.insert(neighs, node);
                     }
                 }
             }
         }
-        false 
+        if let Some(sol) = solution {
+            self.add_all_to_solution(&sol.iter().copied().collect::<FxHashSet<usize>>()).expect("`neighs` are all in `self.graph`");
+            let twins = twins.expect("solution is some");
+            self.delete_node(twins.0);
+            self.delete_node(twins.1);
+            true
+        } else if let Some(twins) = twins {
+            // Do contract
+            let trips = merge.expect("`twins` is some and `solution` is none");
+            self.contract_twins(trips, [twins.0, twins.1]);
+            true
+        } else {
+            false 
+        }
     }
 
     /// Checks the `top_x` nodes with the highest degree. If their degree is higher then the
@@ -417,6 +498,11 @@ impl VCInstance {
                             continue 'outer
                         }
                     },
+                    Rule::Desk => {
+                        if self.desk_rule() {
+                            continue 'outer
+                        }
+                    },
                     Rule::Twins => {
                         if self.twin_rule() {
                             continue 'outer
@@ -538,8 +624,15 @@ mod tests {
         let mut ins = VCInstance::new(graph.unwrap());
         assert!(ins.twin_rule());
         assert!(ins.twin_rule());
-        assert!(!ins.twin_rule());
-        assert_eq!(ins.solution.len(), 6);
+        assert!(ins.twin_rule());
+        assert_eq!(ins.solution.len(), 7);
+        assert!(ins.simple_rules());
+        assert_eq!(ins.solution.len(), 8);
+        assert_eq!(ins.graph.num_nodes(), 0);
+        assert!(ins.finallize_solution_in_place().is_ok());
+        assert!(ins.solution.intersection(&vec![2,3,1].into_iter().collect()).count() == 0 || ins.solution.intersection(&vec![0,4,5].into_iter().collect()).count() == 0);
+        assert_eq!(ins.solution.intersection(&vec![11,15].into_iter().collect()).count(), 2);
+
     }
 
     #[test]
@@ -588,6 +681,7 @@ mod tests {
     }
 
     #[test]
+    /// This is no save test (could fail)
     fn crown_rule_test() {
         let gr = Cursor::new("p td 11 22\n1 2\n1 3\n1 4\n1 5\n1 6\n2 3\n\
                               2 4\n3 5\n3 6\n4 5\n4 7\n4 8\n4 9\n5 6\n\
@@ -607,6 +701,7 @@ mod tests {
     }
 
     #[test]
+    /// This is no save test (could fail)
     fn funnel_test() {
         let gr = Cursor::new("p td 11 17\n4 2\n4 11\n2 3\n3 1\n3 5\n\
                               1 5\n1 6\n1 7\n5 6\n5 7\n6 7\n6 8\n6 10\n\
@@ -618,6 +713,19 @@ mod tests {
         assert!(ins.contract_link_nodes());
         assert!(ins.finallize_solution_in_place().is_ok());
         assert_eq!(ins.solution, vec![0,1,4,5,8,10].into_iter().collect::<FxHashSet<usize>>());
+    }
+
+    #[test]
+    fn desk_test() {
+        let gr = Cursor::new("p td 8 10\n1 2\n1 3\n1 5\n2 3\n3 4\n\
+                              3 6\n4 5\n4 7\n5 6\n6 8\n");
+        let graph = DyUGraph::read_gr(gr);
+        assert!(graph.is_ok());
+        let mut ins = VCInstance::new(graph.unwrap());
+        assert!(ins.desk_rule());
+        assert!(ins.contract_link_nodes());
+        assert!(ins.finallize_solution_in_place().is_ok());
+        assert_eq!(ins.solution, vec![0,1,3,5].into_iter().collect::<FxHashSet<usize>>());
     }
 
 }
