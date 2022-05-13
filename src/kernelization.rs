@@ -302,7 +302,7 @@ impl VCInstance {
         } else if let Some(twins) = twins {
             // Do contract
             let trips = merge.expect("`twins` is some and `solution` is none");
-            self.contract_twins(trips, [twins.0, twins.1]);
+            self.contract_twins(trips, [twins.0, twins.1]).expect("all those nodes exist");
             true
         } else {
             false 
@@ -632,7 +632,6 @@ mod tests {
         assert!(ins.finallize_solution_in_place().is_ok());
         assert!(ins.solution.intersection(&vec![2,3,1].into_iter().collect()).count() == 0 || ins.solution.intersection(&vec![0,4,5].into_iter().collect()).count() == 0);
         assert_eq!(ins.solution.intersection(&vec![11,15].into_iter().collect()).count(), 2);
-
     }
 
     #[test]

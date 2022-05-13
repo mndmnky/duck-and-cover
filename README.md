@@ -55,13 +55,18 @@ A solver for the vertex cover problem. This library provides algorithms and data
 ### 1.3.1 
 * `DyUGraph.from_edge_iter()`
 
-### 1.4.0-test
-* Core rule
-* Funnel rule
-* Desk rule
+### 1.4.0
+* (Core rule)
+* Alternatives (Funnel rule)
+
+### 1.4.1
+* Extended alternatives with the desk rule
 * Improved twin rule
 
 ## Todo 
+
+### 1.4.2-test
+* Improved LP rule
 
 ### 1.?.?
 * Reductions:
