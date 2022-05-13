@@ -110,12 +110,12 @@ impl VCInstance {
     /// This implies the clique rule.
     pub fn funnel_rule(&mut self) -> bool {
         let nodes = self.graph.nodes().collect::<Vec<_>>();
-        let mut u1 = None;
         'outer: for node in nodes {
             let mut neighborhood = self.graph.neighbors(node).as_ref().expect("`node` exists").clone();
             let degree = neighborhood.len();
             assert!(degree > 1); // Simple rules have to be applied first.
             let mut u1_shared = None;
+            let mut u1 = None;
             // TODO no need to go for a u2 if u1 shares less then degree - 2 neighbors
             for neigh in &neighborhood {
                 let shared = &neighborhood.intersection(self.graph.neighbors(*neigh).as_ref().expect("`neigh` exists")).count();
