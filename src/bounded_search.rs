@@ -98,14 +98,14 @@ impl VCInstance {
         // 1. Vertex selection (highest degree, least edges in N(v) 
         let (node, neighbors) = self.graph.max_degree_node_sparse_neighborhood().expect("`self.graph` is not empty");
         // 2. Find mirror 
-        let mut mirrors = self.graph.find_mirrors(node, &neighbors);
-        mirrors.insert(node);
+        //let mut mirrors = self.graph.find_mirrors(node, &neighbors);
+        //mirrors.insert(node);
         // 3. Find Satellite 
         // 4. Packing?
         let mut current_best = None;
         self.put_register();
-        self.add_all_to_solution(&mirrors).expect("`mirrors` are in `self.graph`");
-        //self.add_to_solution(node);
+        //self.add_all_to_solution(&mirrors).expect("`mirrors` are in `self.graph`");
+        self.add_to_solution(node);
         if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
             current_best = Some(sol);
         }

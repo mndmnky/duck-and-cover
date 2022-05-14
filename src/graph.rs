@@ -333,6 +333,7 @@ impl DyUGraph {
 
     /// Finds the mirrors of `node` given its neighborhood `neighbors`.
     pub fn find_mirrors(&self, node: usize, neighbors: &FxHashSet<usize>) -> FxHashSet<usize> {
+        assert_eq!(self.neighbors(node).as_ref().expect("`node` exists"), neighbors);
         let mut mirrors = FxHashSet::default();
         for w in self.open_neighborhood_of_set(neighbors) {
             if w == node { continue }
@@ -643,6 +644,18 @@ mod tests {
         } else {
             assert_eq!(g2.greedy_max_clique().len(), 3);
         }
+    }
+
+    #[test]
+    fn mirror_test() {
+        let gr = Cursor::new("p td 9 18\n1 2\n1 3\n1 4\n1 5\n1 6\n4 5\n4 6\n\
+                             5 6\n7 5\n7 6\n8 2\n8 3\n9 2\n9 3\n9 4\n9 5\n9 6\n\
+                             7 8\n");
+        let graph = DyUGraph::read_gr(gr);
+        assert!(graph.is_ok());
+        let graph = graph.unwrap();
+        let mirrors = graph.find_mirrors(0, &vec![1, 2, 3, 4, 5].into_iter().collect());
+        assert_eq!(mirrors, vec![7, 8].into_iter().collect());
     }
 
 }
