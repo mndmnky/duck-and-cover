@@ -118,7 +118,7 @@ impl VCInstance {
             let mut u1 = None;
             // TODO no need to go for a u2 if u1 shares less then degree - 2 neighbors
             for neigh in &neighborhood {
-                let shared = &neighborhood.intersection(self.graph.neighbors(*neigh).as_ref().expect("`neigh` exists")).count();
+                let shared = &neighborhood.intersection(self.graph.neighbors(*neigh).as_ref().expect(&format!("{} exists",neigh))).count();
                 if *shared < degree - 1 {
                     u1_shared = Some(*shared);
                     u1 = Some(*neigh);

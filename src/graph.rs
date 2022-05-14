@@ -483,10 +483,10 @@ impl DyUGraph {
     pub fn delete_edges(&mut self, edges: &Vec<(usize, usize)>) {
         let mut edges2 = edges.clone();
         edges2.extend(edges.into_iter().map(|(a, b)| (*b,*a)));
-        let mut edge_iter = edges.into_iter();
+        let mut edge_iter = edges2.into_iter();
         loop {
             if let Some((src,trg)) = edge_iter.next() {
-                if let Some(ref mut nn) = self.adj_list[*src] {
+                if let Some(ref mut nn) = self.adj_list[src] {
                     nn.remove(&trg);
                 }
             } else {
