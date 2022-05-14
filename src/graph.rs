@@ -98,6 +98,37 @@ impl DyUGraph {
         None
     }
 
+    /// Returns the node with highest degree and the sparsesed neighborhood, or `None` if no node
+    /// exists.
+    pub fn max_degree_node_sparse_neighborhood(&self) -> Option<(usize, FxHashSet<usize>)> {
+        if let Some(degree) = self.adj_list.iter()
+            .filter_map(|neighs| neighs.as_ref().map(|ne| ne.len()))
+            .max(){
+                if let Some((node, neighbors)) = self.adj_list.iter()
+                    .enumerate()
+                    .filter(|(_,neighs)| neighs.is_some() && neighs.as_ref().expect("is some").len() == degree)
+                    .min_by_key(move |(_,neighs)| self.count_edges(neighs.as_ref().expect("is some"))) {
+                    return Some((node, neighbors.as_ref().expect("is some").clone()))
+                }
+            }
+        None
+    }
+
+    /// Counts the edges within `set`.
+    pub fn count_edges(&self, set: &FxHashSet<usize>) -> usize {
+        let mut set_it = set.iter();
+        let mut set_clone = set.clone();
+        let mut edge_nm = 0;
+        while !set_clone.is_empty() {
+            let next = set_it.next().expect("`set_clone` is not empty");
+            set_clone.remove(&next);
+            if let Some(neighs) = self.adj_list[*next].as_ref() {
+                edge_nm += neighs.intersection(&set_clone).count();
+            }
+        }
+        edge_nm
+    }
+
     /// Returns an iterator over all edges.
     pub fn edges(&self) -> impl Iterator<Item=(usize, usize)> + '_ {
         self.adj_list
@@ -298,6 +329,19 @@ impl DyUGraph {
             }
         }
         (outsiders, matching)
+    }
+
+    /// Finds the mirrors of `node` given its neighborhood `neighbors`.
+    pub fn find_mirrors(&self, node: usize, neighbors: &FxHashSet<usize>) -> FxHashSet<usize> {
+        let mut mirrors = FxHashSet::default();
+        for w in self.open_neighborhood_of_set(neighbors) {
+            if w == node { continue }
+            let unshared: FxHashSet<usize> = neighbors.difference(self.neighbors(w).as_ref().expect("`w` exists")).copied().collect();
+            if self.is_clique(&unshared) {
+                mirrors.insert(w);
+            }
+        }
+        return mirrors
     }
 
 }

@@ -25,6 +25,7 @@ A solver for the vertex cover problem. This library provides algorithms and data
 
 ### Exact Computation 
 * A branch-and-reduce algorithm to compute the optimal solution.
+	* Includes mirror branching as described by [^fn7].
 
 ## Changelog
 
@@ -63,6 +64,11 @@ A solver for the vertex cover problem. This library provides algorithms and data
 * Extended alternatives with the desk rule
 * Improved twin rule
 
+### 1.5.0-test 
+* Improved vertex selection for branching 
+* Mirror branching
+* Deactivate branching on cliques.
+
 ## Todo 
 
 ### 1.4.2-test
@@ -91,3 +97,5 @@ A solver for the vertex cover problem. This library provides algorithms and data
 [^fn5]: Abu-Khzam, Faisal N., et al. "Kernelization algorithms for the vertex cover problem." (2017).
 
 [^fn6]: Xiao, Mingyu, and Hiroshi Nagamochi. "Confining sets and avoiding bottleneck cases: A simple maximum independent set algorithm in degree-3 graphs." Theoretical Computer Science 469 (2013): 92-104.
+
+[^fn7]: Fomin, Fedor V., Fabrizio Grandoni, and Dieter Kratsch. "A measure & conquer approach for the analysis of exact algorithms." Journal of the ACM (JACM) 56.5 (2009): 1-32.
