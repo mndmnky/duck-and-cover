@@ -96,7 +96,7 @@ impl VCInstance {
         } else {
             // On high degree node and neighbors
             // 1. Vertex selection (highest degree, least edges in N(v) 
-            let (node, neighbors) = self.graph.max_degree_node_sparse_neighborhood().expect("`self.graph` is not empty");
+            let (node, neighbors) = self.graph.max_degree_node_neighbors().expect("`self.graph` is not empty");
             // 2. Find mirror 
             //let mut mirrors = self.graph.find_mirrors(node, &neighbors);
             //mirrors.insert(node);

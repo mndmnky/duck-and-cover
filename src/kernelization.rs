@@ -24,7 +24,7 @@ use crate::bipart_flow::BipartFlowNet;
 
 pub const FAST_RULES: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode];
 pub const ALL_RULES_BUT_LOCAL_FAST_FIRST: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique, Rule::Twins, Rule::Dominion, Rule::Crown1, Rule::Flow];
-pub const RECOMMENDED: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Twins, Rule::Funnel, Rule::Dominion, Rule::Desk, Rule::Crown100, Rule::Flow, Rule::LocalK10];
+pub const RECOMMENDED: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Twins, Rule::Clique, Rule::Dominion];
 
 pub enum Rule {
     SimpleRules,
@@ -32,6 +32,7 @@ pub enum Rule {
     Clique,
     Funnel,
     Twins,
+    SimpleTwins,
     Dominion,
     Desk,
     Flow,
@@ -256,6 +257,38 @@ impl VCInstance {
             }
         }
         false 
+    }
+
+    pub fn simple_twin_rule(&mut self) -> bool {
+        let mut connects = HashMap::new();
+        let mut solution = None;
+        let mut twins = None;
+        'outer: for node in self.graph.nodes() {
+            if self.graph.degree(node).expect("`node` exists") == 3 {
+                let mut neighbors: Vec<usize> = self.graph.neighbors(node).as_ref().expect("`node` exists").iter().copied().collect();
+                neighbors.sort_unstable();
+                let neighs: [usize; 3] = [neighbors[0], neighbors[1], neighbors[2]];
+                if connects.contains_key(&neighs) {
+                    let twin = connects.get(&neighs).expect("contains key `neighs`");
+                    solution = Some(neighs);
+                    twins = Some((node, *twin));
+                    break 'outer
+                } else {
+                    if self.graph.has_edge(&neighs.iter().copied().collect()) {
+                        connects.insert(neighs, node);
+                    }
+                }
+            }
+        }
+        if let Some(sol) = solution {
+            self.add_all_to_solution(&sol.iter().copied().collect::<FxHashSet<usize>>()).expect("`neighs` are all in `self.graph`");
+            let twins = twins.expect("solution is some");
+            self.delete_node(twins.0);
+            self.delete_node(twins.1);
+            true
+        } else {
+            false 
+        }
     }
 
     /// Traverses over all nodes with a degree of 3 and stores the neighbors `neighs` of each such 
@@ -505,6 +538,11 @@ impl VCInstance {
                     },
                     Rule::Twins => {
                         if self.twin_rule() {
+                            continue 'outer
+                        }
+                    },
+                    Rule::SimpleTwins => {
+                        if self.simple_twin_rule() {
                             continue 'outer
                         }
                     },
