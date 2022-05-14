@@ -24,7 +24,7 @@ use crate::bipart_flow::BipartFlowNet;
 
 pub const FAST_RULES: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode];
 pub const ALL_RULES_BUT_LOCAL_FAST_FIRST: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique, Rule::Twins, Rule::Dominion, Rule::Crown1, Rule::Flow];
-pub const RECOMMENDED: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Twins, Rule::Clique, Rule::Dominion, Rule::Crown100, Rule::Flow, Rule::LocalK10];
+pub const RECOMMENDED: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Twins, Rule::Funnel, Rule::Dominion, Rule::Desk, Rule::Crown100, Rule::Flow, Rule::LocalK10];
 
 pub enum Rule {
     SimpleRules,
@@ -265,7 +265,7 @@ impl VCInstance {
     /// `neighs` also in `connects`.
     pub fn twin_rule(&mut self) -> bool {
         let mut connects = HashMap::new();
-        //let mut un_connects = HashMap::new();
+        let mut un_connects = HashMap::new();
         let mut solution = None;
         let mut merge = None;
         let mut twins = None;
@@ -279,16 +279,16 @@ impl VCInstance {
                     solution = Some(neighs);
                     twins = Some((node, *twin));
                     break 'outer
-                //} else if un_connects.contains_key(&neighs) {
-                //    let twin = un_connects.get(&neighs).expect("contains key `neighs`");
-                //    twins = Some((node, *twin));
-                //    merge = Some(neighs);
-                //    break 'outer
+                } else if un_connects.contains_key(&neighs) {
+                    let twin = un_connects.get(&neighs).expect("contains key `neighs`");
+                    twins = Some((node, *twin));
+                    merge = Some(neighs);
+                    break 'outer
                 } else {
                     if self.graph.has_edge(&neighs.iter().copied().collect()) {
                         connects.insert(neighs, node);
                     } else {
-                        //un_connects.insert(neighs, node);
+                        un_connects.insert(neighs, node);
                     }
                 }
             }

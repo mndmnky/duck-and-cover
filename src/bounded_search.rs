@@ -69,56 +69,56 @@ impl VCInstance {
         }
         // Today we Branch:
         // On cliques 
-       // let clique = self.graph.greedy_max_clique();
-       // if clique.len() > 2 {
-       //     let mut solution_set = clique.clone();
-       //     let mut current_best: Option<FxHashSet<usize>> = None;
-       //     self.put_register();
-       //     self.add_all_to_solution(&solution_set).expect("`solution_set` is in `self.graph`");
-       //     if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
-       //         current_best = Some(sol);
-       //     }
-       //     self.rebuild_section();
-       //     for node in clique {
-       //         self.put_register();
-       //         solution_set.remove(&node);
-       //         self.add_all_to_solution(&solution_set).expect("`solution_set` is in `self.graph`");
-       //         // get neighbors and add them
-       //         let nn = self.graph.neighbors(node).as_ref().expect("`node` exists").clone();
-       //         self.add_all_to_solution(&nn).expect("`nn` exists");
-       //         if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
-       //             current_best = Some(sol);
-       //         }
-       //         self.rebuild_section();
-       //         solution_set.insert(node);
-       //     }
-       //     return current_best
-       // } else {
-        // On high degree node and neighbors
-        // 1. Vertex selection (highest degree, least edges in N(v) 
-        let (node, neighbors) = self.graph.max_degree_node_sparse_neighborhood().expect("`self.graph` is not empty");
-        // 2. Find mirror 
-        //let mut mirrors = self.graph.find_mirrors(node, &neighbors);
-        //mirrors.insert(node);
-        // 3. Find Satellite 
-        // 4. Packing?
-        let mut current_best = None;
-        self.put_register();
-        //self.add_all_to_solution(&mirrors).expect("`mirrors` are in `self.graph`");
-        self.add_to_solution(node);
-        if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
-            current_best = Some(sol);
-        }
-        self.rebuild_section();
-        self.put_register();
-        self.add_all_to_solution(&neighbors).expect("`neighbors` is in `self.graph`");
-        self.delete_node(node);
-        if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
-            current_best = Some(sol);
-        }
-        self.rebuild_section();
-        return current_best
-       // }
+        let clique = self.graph.greedy_max_clique();
+        if clique.len() > 2 {
+            let mut solution_set = clique.clone();
+            let mut current_best: Option<FxHashSet<usize>> = None;
+            self.put_register();
+            self.add_all_to_solution(&solution_set).expect("`solution_set` is in `self.graph`");
+            if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
+                current_best = Some(sol);
+            }
+            self.rebuild_section();
+            for node in clique {
+                self.put_register();
+                solution_set.remove(&node);
+                self.add_all_to_solution(&solution_set).expect("`solution_set` is in `self.graph`");
+                // get neighbors and add them
+                let nn = self.graph.neighbors(node).as_ref().expect("`node` exists").clone();
+                self.add_all_to_solution(&nn).expect("`nn` exists");
+                if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
+                    current_best = Some(sol);
+                }
+                self.rebuild_section();
+                solution_set.insert(node);
+            }
+            return current_best
+        } else {
+            // On high degree node and neighbors
+            // 1. Vertex selection (highest degree, least edges in N(v) 
+            let (node, neighbors) = self.graph.max_degree_node_sparse_neighborhood().expect("`self.graph` is not empty");
+            // 2. Find mirror 
+            //let mut mirrors = self.graph.find_mirrors(node, &neighbors);
+            //mirrors.insert(node);
+            // 3. Find Satellite 
+            // 4. Packing?
+            let mut current_best = None;
+            self.put_register();
+            //self.add_all_to_solution(&mirrors).expect("`mirrors` are in `self.graph`");
+            self.add_to_solution(node);
+            if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
+                current_best = Some(sol);
+            }
+            self.rebuild_section();
+            self.put_register();
+            self.add_all_to_solution(&neighbors).expect("`neighbors` is in `self.graph`");
+            //self.delete_node(node);
+            if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
+                current_best = Some(sol);
+            }
+            self.rebuild_section();
+            return current_best
+       }
     }
 
 }
