@@ -23,8 +23,8 @@ use std::collections::HashMap;
 use crate::bipart_flow::BipartFlowNet;
 
 pub const FAST_RULES: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode];
-pub const ALL_RULES_BUT_LOCAL_FAST_FIRST: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique, Rule::Twins];
-pub const RECOMMENDED: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Twins, Rule::Clique, Rule::LocalK10];
+pub const ALL_RULES_BUT_LOCAL_FAST_FIRST: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique, Rule::Twins, Rule::Dominion, Rule::Flow];
+pub const RECOMMENDED: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Twins, Rule::Funnel, Rule::Dominion, Rule::Desk, Rule::Flow, Rule::LocalK10];
 
 pub enum Rule {
     SimpleRules,
@@ -356,6 +356,7 @@ impl VCInstance {
 
     /// Applies the `crown` rule on a random matching. 
     /// Returns `true` if at least one node was added to the solution.
+    /// Does not currently work!
     pub fn crown_rule(&mut self) -> bool {
         let outsiders = self.graph.unmatched_of_random_matching();
         let (mut spikes, matching) = self.graph.random_matching_between_set_and_neighbors(&outsiders);
