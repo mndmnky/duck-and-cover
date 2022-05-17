@@ -427,7 +427,7 @@ impl DyUGraph {
                     // Find doubles
                     let new_neighbors: FxHashSet<usize> = neighbors1
                         .union(&neighbors2)
-                        .filter(|node| add_neighs.contains(node))
+                        .filter(|node| !add_neighs.contains(node))
                         .copied()
                         .collect();
                     // add neighbors (both sides)
