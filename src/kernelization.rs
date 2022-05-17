@@ -23,8 +23,8 @@ use std::collections::HashMap;
 use crate::bipart_flow::BipartFlowNet;
 
 pub const FAST_RULES: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode];
-pub const ALL_RULES_BUT_LOCAL_FAST_FIRST: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique, Rule::Twins, Rule::Dominion, Rule::Crown1, Rule::Flow];
-pub const RECOMMENDED: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Twins, Rule::Dominion, Rule::Clique, Rule::Flow, Rule::Crown100, Rule::LocalK10];
+pub const ALL_RULES_BUT_LOCAL_FAST_FIRST: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Clique, Rule::Twins, Rule::Dominion, Rule::Crown1];
+pub const RECOMMENDED: &[Rule] = &[Rule::SimpleRules, Rule::LinkNode, Rule::Twins, Rule::Dominion, Rule::Clique, Rule::Crown100, Rule::LocalK10];
 
 pub enum Rule {
     SimpleRules,
