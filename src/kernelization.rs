@@ -66,6 +66,16 @@ impl VCInstance {
                     if neighbors.len() == 0 {
                         self.delete_node(node);
                     } else if neighbors.len() == 1 {
+                        if node == 188 {
+                            if neighbors.iter().next().unwrap() == &197 {
+                                eprintln!("add 197");
+                            }
+                        }
+                        if node == 197 {
+                            if neighbors.iter().next().unwrap() == &188 {
+                                eprintln!("add 188");
+                            }
+                        }
                         self.add_to_solution(*neighbors.iter().next().expect("`node`s degree is 1"));
                         self.delete_node(node);
                         changed = true;
@@ -333,9 +343,13 @@ impl VCInstance {
             self.delete_node(twins.1);
             true
         } else if let Some(twins) = twins {
+            let contains = self.graph.edge_exists((188,197));
             // Do contract
             let trips = merge.expect("`twins` is some and `solution` is none");
             self.contract_twins(trips, [twins.0, twins.1]).expect("all those nodes exist");
+            if contains && !self.graph.edge_exists((188,197)) {
+                eprintln!("edge removed (TC)");
+            }
             true
         } else {
             false 

@@ -4,7 +4,7 @@
 use std::error;
 use std::io;
 
-use duck_and_cover::{graph::DyUGraph, vc_instance::VCInstance, kernelization::*, cust_error::ProcessingError};
+use duck_and_cover::{graph::DyUGraph, vc_instance::VCInstance, kernelization::*};
 
 pub fn main() -> Result<(), Box<dyn error::Error>> {
     let stdin = io::stdin();
@@ -15,12 +15,12 @@ pub fn main() -> Result<(), Box<dyn error::Error>> {
     let n = graph.num_nodes();
     let mut vci = VCInstance::new(graph);
     let org = vci.clone();
+    eprintln!("hello");
     let resu = vci.branch_and_reduce(RECOMMENDED)?;
+    eprintln!("solution size final: {}", resu.len());
 
     // Validate
-    if !org.validate_solution(&resu) {
-        return Err(Box::new(ProcessingError::InvalidSolution));
-    }
+    org.validate_solution(&resu)?;
 
     VCInstance::write_solution(n, &resu, &mut stdout)?;
     Ok(())

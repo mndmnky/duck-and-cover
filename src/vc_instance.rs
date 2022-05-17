@@ -12,17 +12,17 @@ pub struct VCInstance {
     pub lower_bound: Option<usize>,
     pub upper_bound: Option<usize>,
     pub current_best: Option<FxHashSet<usize>>,
-    /// If any element in `Item.0` is not in the solution, convert the placeholder to `Item.1.0`,
+    /// If all elements in `Item.0` are in the solution, convert the placeholder to `Item.1.0`,
     /// or else to `Item.1.1`.
-    conversion: Vec<(FxHashSet<usize>, (usize, usize))>,
+    pub conversion: Vec<(FxHashSet<usize>, (usize, usize))>,
     /// Records changes to the adjacency list.
-    alterations: Vec<Alteration>,
+    pub alterations: Vec<Alteration>,
     /// An id register, that helps to control how much of the graph is rebuild.
-    register: Vec<usize>,
+    pub register: Vec<usize>,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone)]
-enum Alteration {
+pub enum Alteration {
     DeleteNode(usize, FxHashSet<usize>),
     AddNode(usize, FxHashSet<usize>),
     /// Contracted `link` and merged `from` into `into`. 
@@ -136,11 +136,21 @@ impl VCInstance {
     /// Contracts twin nodes `twins` and their neighbors `trips` into a single node, only done if
     /// there is no edge between `trips` (not checked).
     pub (crate) fn contract_twins(&mut self, trips: [usize; 3], twins: [usize; 2]) -> Result<(), ProcessingError> {
+        let contains = self.graph.edge_exists((188,197));
+        if twins == [115, 17] && trips == [76, 150, 188] {
+            println!("first contract");
+            if contains {
+                println!("weird");
+            }
+        }
         if self.graph.delete_node(twins[0]).is_none() || 
             self.graph.delete_node(twins[1]).is_none() {
             return Err(ProcessingError::InvalidParameter("`link` was not contained in the graph.".to_owned()))
         }
         if let Some((old_from1, old_from2, new_into)) = self.graph.merge_triples((trips[0], trips[1]), trips[2]) {
+            if twins == [115, 17] && trips == [76, 150, 188] {
+                println!("new into: {:?}", new_into);
+            }
             // Inserts a placeholder into the solution. Depending on the presense of `into` in the
             // final solution, this will either become `link` or `from`.
             self.solution.insert(self.graph.num_reserved() + self.conversion.len());
@@ -148,6 +158,10 @@ impl VCInstance {
             self.solution.insert(self.graph.num_reserved() + self.conversion.len());
             self.conversion.push((vec![trips[2]].into_iter().collect(), (trips[1], twins[1])));
             self.alterations.push(Alteration::ContractTwins{ twins, trips, old_from1, old_from2, new_into });
+            if contains && !self.graph.edge_exists((188,197)) {
+                //eprintln!("Alt(CT): twins: {:?}, trips: {:?}, old_from1: {:?}, old_from2: {:?}, new_into: {:?}", &twins, &trips, &old_from1, &old_from2, &new_into);
+                eprintln!("{:?}", self.alterations.last());
+            }
             return Ok(())
         } else {
             self.graph.reinsert_node(twins[0], &trips.iter().copied().collect());
@@ -266,21 +280,49 @@ impl VCInstance {
         while self.alterations.len() > up_to {
             match self.alterations.pop().expect("`self.alteration` > 0") {
                 Alteration::AddNode(node, neigh) => {
+                    let missing = !self.graph.edge_exists((188,197));
                     self.solution.remove(&node);
                     self.graph.reinsert_node(node, &neigh);
+                    if missing && self.graph.edge_exists((188,197)) {
+                        if !self.graph.edge_exists((197, 188)) {
+                            eprint!("error");
+                        }
+                        eprintln!("edge restored (AN)");
+                    }
                 },
                 Alteration::DeleteNode(node, neigh) => {
                     self.graph.reinsert_node(node, &neigh);
                 },
                 Alteration::ContractLink { link, from, into, old_from, new_into} => {
+                    let missing = !self.graph.edge_exists((188,197));
+                    let contains = self.graph.edge_exists((188,197));
                     self.conversion.pop();
                     let placeholder = self.graph.num_reserved() + self.conversion.len();
                     self.solution.remove(&placeholder);
                     self.graph.delete_neighbors(into, &new_into);
                     self.graph.reinsert_node(from, &old_from);
                     self.graph.reinsert_node(link, &vec![into, from].iter().copied().collect());
+                    if missing && self.graph.edge_exists((188,197)) {
+
+                        //eprintln!("edge rebuild (CL)");
+                    }
+                    if contains && !self.graph.edge_exists((188,197)) {
+                        eprintln!("edge deleted while rebuild (CL)");
+                    }
                 },
                 Alteration::ContractTwins { twins, trips, old_from1, old_from2, new_into} => {
+                    println!("CT twins: {:?} trips: {:?}", &twins, &trips);
+                    if (twins[0] == 197 || twins[1] == 197) && 
+                        (trips[2] == 188 || trips[1] == 188 || trips[0] == 188) {
+                        eprintln!("first rebuild");
+                        if self.graph.edge_exists((188,197)) {
+                            eprintln!("evil edge exists");
+                        } else {
+                            eprintln!("evil edge is gone");
+                        }
+                    }
+                    let missing = !self.graph.edge_exists((188,197));
+                    let contains = self.graph.edge_exists((188,197));
                     self.conversion.pop();
                     let placeholder = self.graph.num_reserved() + self.conversion.len();
                     self.solution.remove(&placeholder);
@@ -292,6 +334,13 @@ impl VCInstance {
                     self.graph.reinsert_node(trips[1], &old_from2);
                     self.graph.reinsert_node(twins[0], &trips.iter().copied().collect());
                     self.graph.reinsert_node(twins[1], &trips.iter().copied().collect());
+                    if contains && !self.graph.edge_exists((188,197)) {
+                        eprintln!("edge deleted while rebuild (CT)");
+                        eprintln!("ALT(CT) twins: {:?} trips: {:?} of1: {:?} of2: {:?} ni: {:?}", &twins, &trips, &old_from1, &old_from2, &new_into);
+                    }
+                    if missing && self.graph.edge_exists((188,197)) {
+                        eprintln!("edge rebuild (CT)");
+                    }
                 },
                 Alteration::SubstitudeAlternatives(missing_edges, set_len) => {
                     for _ in 0..set_len {
@@ -314,18 +363,21 @@ impl VCInstance {
     }
 
     /// Checks if a solution is valid.
-    pub fn validate_solution(&self, sol: &FxHashSet<usize>) -> bool {
+    pub fn validate_solution(&self, sol: &FxHashSet<usize>) -> Result<(),ProcessingError> {
         let mut clone = self.clone();
         for node in sol {
             if *node >= clone.graph.num_reserved() {
-                return false
+                return Err(ProcessingError::InvalidSolution("Unprocessed node".to_owned()));
             }
             clone.graph.delete_node(*node);
         }
         if clone.graph.edges().count() != 0 {
-            return false
+            for edge in clone.graph.edges() {
+                eprintln!("undeleted edge: {:?}", edge);
+            }
+            return Err(ProcessingError::InvalidSolution("No solution".to_owned()));
         }
-        true
+        Ok(())
     }
 
 }

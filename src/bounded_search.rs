@@ -29,6 +29,7 @@ impl VCInstance {
     /// A `ProcessingError` should only be thrown if ... TODO
     pub fn branch_and_reduce(&mut self, priority_list: &[Rule]) -> Result<FxHashSet<usize>, ProcessingError> {
         self.compute_and_set_upper_lower(priority_list)?;
+        eprintln!("Start with: {}",self.current_best.as_ref().unwrap().len());
         if let Some(solution) = self.branch_and_reduce_inner(priority_list) {
             return Ok(solution)
         }
@@ -37,12 +38,20 @@ impl VCInstance {
 
     fn branch_and_reduce_inner(&mut self, priority_list: &[Rule]) -> Option<FxHashSet<usize>> {
         // Reduce instance 
+        let contains = self.graph.edge_exists((188,197));
         self.exhaustive_rules(priority_list);
+        if contains && !self.graph.edge_exists((188,197)) {
+            eprintln!("edge removed exhaustive_rules");
+        }
         if self.graph.num_nodes() == 0 {
             if self.solution.len() < self.upper_bound.expect("upper bound was set") {
                 // If we use the link node rule, we have to finallize the found solution.
                 let sol = self.finallize_solution(&self.solution).expect("Finallizing should not go wrong at empty graph");
                 self.update_current_best(&sol);
+                eprintln!("set best to: {}", self.current_best.as_ref().unwrap().len());
+                eprintln!("Return solution at empty graph");
+                //println!("{:?}",self.conversion);
+                println!("{:?}",self.alterations);
                 return Some(sol);
             } else {
                 return None;
@@ -54,6 +63,7 @@ impl VCInstance {
         }
         // Computes CCs indipendently.
         if self.graph.disconnected() {
+            eprintln!("split");
             let mut solution = self.solution.clone();
             for mut instance in self.graph.split_into_connected().into_iter().map(|graph| VCInstance::new(graph)) {
                 solution.extend(instance.branch_and_reduce(priority_list).expect("`branch_and_reduce()` should not fail on a fresh `VCInstance`"));
@@ -74,7 +84,11 @@ impl VCInstance {
             let mut solution_set = clique.clone();
             let mut current_best: Option<FxHashSet<usize>> = None;
             self.put_register();
+            let contains = self.graph.edge_exists((188,197));
             self.add_all_to_solution(&solution_set).expect("`solution_set` is in `self.graph`");
+            if contains && !self.graph.edge_exists((188,197)) {
+                eprintln!("edge removed clique comp");
+            }
             if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
                 current_best = Some(sol);
             }
@@ -82,10 +96,17 @@ impl VCInstance {
             for node in clique {
                 self.put_register();
                 solution_set.remove(&node);
+                let contains = self.graph.edge_exists((188,197));
                 self.add_all_to_solution(&solution_set).expect("`solution_set` is in `self.graph`");
+                if contains && !self.graph.edge_exists((188,197)) {
+                    eprintln!("edge removed clique parts");
+                }
                 // get neighbors and add them
                 let nn = self.graph.neighbors(node).as_ref().expect("`node` exists").clone();
                 self.add_all_to_solution(&nn).expect("`nn` exists");
+                if contains && !self.graph.edge_exists((188,197)) {
+                    eprintln!("edge removed clique neighbors");
+                }
                 if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
                     current_best = Some(sol);
                 }
@@ -105,13 +126,21 @@ impl VCInstance {
             let mut current_best = None;
             self.put_register();
             //self.add_all_to_solution(&mirrors).expect("`mirrors` are in `self.graph`");
+            let contains = self.graph.edge_exists((188,197));
             self.add_to_solution(node);
+            if contains && !self.graph.edge_exists((188,197)) {
+                eprintln!("edge removed single branch");
+            }
             if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
                 current_best = Some(sol);
             }
             self.rebuild_section();
             self.put_register();
+            let contains = self.graph.edge_exists((188,197));
             self.add_all_to_solution(&neighbors).expect("`neighbors` is in `self.graph`");
+            if contains && !self.graph.edge_exists((188,197)) {
+                eprintln!("edge removed single branch neighs");
+            }
             //self.delete_node(node);
             if let Some(sol) = self.branch_and_reduce_inner(priority_list) {
                 current_best = Some(sol);

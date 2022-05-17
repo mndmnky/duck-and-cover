@@ -41,7 +41,7 @@ pub enum ProcessingError {
     /// Error at the conversion of placeholder from the `LinkNode`-rule in the solution set.
     ConversionError,
     RebuildError,
-    InvalidSolution,
+    InvalidSolution(String),
 }
 
 impl fmt::Display for ProcessingError {
@@ -51,7 +51,7 @@ impl fmt::Display for ProcessingError {
             Self::GraphError(msg) => write!(f, "Graph error: {}", msg),
             Self::ConversionError => write!(f, "Conversion error"),
             Self::RebuildError => write!(f, "Rebuild error"),
-            Self::InvalidSolution => write!(f, "InvalidSolution"),
+            Self::InvalidSolution(msg) => write!(f, "InvalidSolution: {}", msg),
         }
     }
 }
