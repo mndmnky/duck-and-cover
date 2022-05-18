@@ -64,10 +64,9 @@ A solver for the vertex cover problem. This library provides algorithms and data
 * Extended alternatives with the desk rule
 * Improved twin rule
 
-### 1.5.0-test 
+### 1.5.0
 * Improved vertex selection for branching 
 * Mirror branching
-* Deactivate branching on cliques.
 
 ## Todo 
 
