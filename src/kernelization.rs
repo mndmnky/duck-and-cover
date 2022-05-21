@@ -460,13 +460,18 @@ impl VCInstance {
 
     /// Applies the `flow-rule`, returns true if at least one node was removed.
     pub fn flow_rule(&mut self) -> bool {
-        let mut flow_net: BipartFlowNet = self.graph.clone().into();
-        if let Some((ins, outs)) = flow_net.compute_full_and_empty_nodes() {
-            let real_ins = ins.iter().map(|id| flow_net.names[*id]).collect(); 
-            let real_outs = outs.iter().map(|id| flow_net.names[*id]).collect(); 
-            self.add_all_to_solution(&real_ins).expect("All nodes in `ins` are in `self.graph`");
-            self.delete_all_nodes(&real_outs).expect("All nodes in `outs` are in `self.graph`");
-            return true
+        if let Some(ref mut flow_net) = self.flow_net {
+            // TODO: recompute for already existing.
+        } else {
+            // TODO: set self flow net!
+            let mut flow_net: BipartFlowNet = self.graph.clone().into();
+            if let Some((ins, outs)) = flow_net.compute_full_and_empty_nodes() {
+                let real_ins = ins.iter().map(|id| flow_net.names[*id]).collect(); 
+                let real_outs = outs.iter().map(|id| flow_net.names[*id]).collect(); 
+                self.add_all_to_solution(&real_ins).expect("All nodes in `ins` are in `self.graph`");
+                self.delete_all_nodes(&real_outs).expect("All nodes in `outs` are in `self.graph`");
+                return true
+            }
         }
         false
     }

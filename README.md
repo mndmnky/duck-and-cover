@@ -15,6 +15,7 @@ A solver for the vertex cover problem. This library provides algorithms and data
 	* Twin node rule [^fn3]. (with contraction TODO: cite)
 	* Unconfined node rule as described in [^fn4], here dubbed `dominion` rule.
 	* Network flow rule as described in [^fn5].
+		* And its improvements as described in [^fn8].
 	* Alternatives (funnel & desk) as described in [^fn6].
 
 ### Heuristics and Approximations
@@ -68,21 +69,20 @@ A solver for the vertex cover problem. This library provides algorithms and data
 * Improved vertex selection for branching 
 * Mirror branching
 
+### 1.6.0
+* Improved LP rule (finding balanced independent sets)
+
 ## Todo 
 
-### 1.4.2-test
-* Improved LP rule
+### 1.6.1
+* Carry LP network along
 
 ### 1.?.?
-* Reductions:
-	* LP? 
-* Heuristics:
-	* Special weight heuristics 
-* Branch-and-reduce:
-	* Mirror branching 
-	* Satellite branching 
-	* Packing branching
-
+* Packing
+	* Branching
+	* Rules
+* Initial local search 
+* MoMR? branching
 
 
 [^fn1]: Chen, Jianer, Iyad A. Kanj, and Weijia Jia. "Vertex cover: further observations and further improvements." Journal of Algorithms 41.2 (2001): 280-301.
@@ -98,3 +98,5 @@ A solver for the vertex cover problem. This library provides algorithms and data
 [^fn6]: Xiao, Mingyu, and Hiroshi Nagamochi. "Confining sets and avoiding bottleneck cases: A simple maximum independent set algorithm in degree-3 graphs." Theoretical Computer Science 469 (2013): 92-104.
 
 [^fn7]: Fomin, Fedor V., Fabrizio Grandoni, and Dieter Kratsch. "A measure & conquer approach for the analysis of exact algorithms." Journal of the ACM (JACM) 56.5 (2009): 1-32.
+
+[^fn8]: Iwata, Yoichi, Keigo Oka, and Yuichi Yoshida. "Linear-time FPT algorithms via network flow." Proceedings of the twenty-fifth annual ACM-SIAM symposium on Discrete algorithms. Society for Industrial and Applied Mathematics, 2014.

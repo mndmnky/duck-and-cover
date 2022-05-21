@@ -2,6 +2,7 @@ use crate::graph::DyUGraph;
 use fxhash::FxHashSet;
 use crate::kernelization::Rule;
 use crate::cust_error::ProcessingError;
+use crate::bipart_flow::BipartFlowNet;
 use std::io::Write;
 use std::io;
 
@@ -12,6 +13,8 @@ pub struct VCInstance {
     pub lower_bound: Option<usize>,
     pub upper_bound: Option<usize>,
     pub current_best: Option<FxHashSet<usize>>,
+    /// Maintains a flow network while processing.
+    pub flow_net: Option<BipartFlowNet>,
     /// If any element in `Item.0` is not in the solution, convert the placeholder to `Item.1.0`,
     /// or else to `Item.1.1`.
     conversion: Vec<(FxHashSet<usize>, (usize, usize))>,
@@ -57,6 +60,7 @@ impl VCInstance {
             lower_bound: None,
             upper_bound: None,
             current_best: None,
+            flow_net: None,
             alterations: Vec::new(),
             register: vec![0],
             conversion: Vec::new(),
@@ -69,6 +73,9 @@ impl VCInstance {
         if let Some(old_neighbors) = self.graph.delete_node(node) {
             self.alterations.push(Alteration::AddNode(node, old_neighbors.clone()));
             self.solution.insert(node);
+            if let Some(ref mut flow_net) = self.flow_net {
+                flow_net.remove(node);
+            }
             return true
         }
         false
@@ -81,6 +88,9 @@ impl VCInstance {
             if let Some(old_neighbors) = self.graph.delete_node(*node) {
                 self.alterations.push(Alteration::AddNode(*node, old_neighbors.clone()));
                 self.solution.insert(*node);
+                if let Some(ref mut flow_net) = self.flow_net {
+                    flow_net.remove(*node);
+                }
             } else {
                 return Err(ProcessingError::InvalidParameter("Given node set was not completely contained in the graph.".to_owned()))
             }
@@ -94,6 +104,9 @@ impl VCInstance {
         for node in node_set {
             if let Some(old_neighbors) = self.graph.delete_node(*node) {
                 self.alterations.push(Alteration::DeleteNode(*node, old_neighbors.clone()));
+                if let Some(ref mut flow_net) = self.flow_net {
+                    flow_net.remove(*node);
+                }
             } else {
                 return Err(ProcessingError::InvalidParameter("Given node set was not completely contained in the graph.".to_owned()))
             }
@@ -106,10 +119,15 @@ impl VCInstance {
     pub fn delete_node(&mut self, node: usize) -> bool {
         if let Some(old_neighbors) = self.graph.delete_node(node) {
             self.alterations.push(Alteration::DeleteNode(node, old_neighbors.clone()));
+            if let Some(ref mut flow_net) = self.flow_net {
+                flow_net.remove(node);
+            }
             return true
         }
         false
     }
+
+    // -------------------------- TODO maintaining flow_net from here ----------------
 
     /// Contracts `link` and merges `from` into `into`. 
     /// Returns false if either of the given node does not exist.
