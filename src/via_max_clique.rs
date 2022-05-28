@@ -1,3 +1,6 @@
+//! Unfinished module
+//! Solves a vertex cover instance via a max clique problem solver.
+
 use crate::vc_instance::VCInstance;
 use fxhash::FxHashSet;
 use std::collections::{HashMap, HashSet};
@@ -12,6 +15,7 @@ pub struct MaxCliqueInstance {
 impl MaxCliqueInstance {
 
     fn get_branches_d0(&self, sub_start: usize, sub_end: usize, colors: usize) -> (Vec<usize>, Vec<FxHashSet<usize>>) {
+        todo!();
         let mut indiess: Vec<FxHashSet<usize>> = Vec::new();
         let mut b: Vec<usize> = Vec::new();
         'outer: for node in sub_end..(sub_start - 1) {
@@ -27,11 +31,11 @@ impl MaxCliqueInstance {
             if indiess.len() < colors {
                 indiess.push(vec![node].into_iter().collect());
             } else {
-                for i in 0..indiess.len() {
+                let range = indiess.len();
+                for i in 0..range {
                     // find first indipendent set that contains only one node connected to `node`.
                     let mut count = 0;
-                    let mut indies = &mut indiess[i];
-                    if !indies.iter().any(|other| {
+                    if !indiess[i].iter().any(|other| {
                         if self.adj_matrix[node*self.n+other] {
                             count += 1;
                             return count == 2
@@ -39,14 +43,13 @@ impl MaxCliqueInstance {
                         false
                     }){
                         // get match 
-                        let other = *indies.iter().find(|other| self.adj_matrix[node*self.n+**other]).expect("exactly one such node exists");
+                        let other = *indiess[i].iter().find(|other| self.adj_matrix[node*self.n+**other]).expect("exactly one such node exists");
                         // check other fits
-                        for j in (i+1)..indiess.len() {
-                            let mut indies2 = &mut indiess[j];
-                            if !indies2.iter().any(|otterother| self.adj_matrix[other*self.n+otterother]) {
-                                indies2.insert(other);
-                                indies.remove(&other);
-                                indies.insert(node);
+                        for j in (i+1)..range {
+                            if !indiess[j].iter().any(|otterother| self.adj_matrix[other*self.n+otterother]) {
+                                indiess[j].insert(other);
+                                indiess[i].remove(&other);
+                                indiess[i].insert(node);
                                 continue 'outer
                             }
                         }
