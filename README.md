@@ -77,12 +77,14 @@ A solver for the vertex cover problem. This library provides algorithms and data
 ### 1.6.1
 * Carry LP network along
 
+### 1.7.0
+* MoMR branching
+
 ### 1.?.?
 * Packing
 	* Branching
 	* Rules
 * Initial local search 
-* MoMR? branching
 
 
 [^fn1]: Chen, Jianer, Iyad A. Kanj, and Weijia Jia. "Vertex cover: further observations and further improvements." Journal of Algorithms 41.2 (2001): 280-301.
